@@ -35,7 +35,7 @@ CohortHonestDiD is not on CRAN. Install the development version from GitHub:
 
 ```r
 # install.packages("remotes")
-remotes::install_github("YOUR-GITHUB-USER/CohortHonestDiD")
+remotes::install_github("lzy318/CohortHonestDiD")
 library(CohortHonestDiD)
 ```
 
@@ -43,7 +43,7 @@ To also build the two vignettes (this takes a few minutes and installs the
 suggested packages, including knitr and rmarkdown):
 
 ```r
-remotes::install_github("YOUR-GITHUB-USER/CohortHonestDiD",
+remotes::install_github("lzy318/CohortHonestDiD",
                         dependencies = TRUE, build_vignettes = TRUE)
 ```
 

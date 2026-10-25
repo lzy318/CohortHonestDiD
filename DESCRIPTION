@@ -15,8 +15,8 @@ Description: Performs cohort-anchored sensitivity analysis for
     smoothness restrictions, conditional and conditional least-favorable
     confidence sets, fixed-length intervals, and aggregate benchmarks.
 License: MIT + file LICENSE
-URL: https://github.com/YOUR-GITHUB-USER/CohortHonestDiD
-BugReports: https://github.com/YOUR-GITHUB-USER/CohortHonestDiD/issues
+URL: https://github.com/lzy318/CohortHonestDiD
+BugReports: https://github.com/lzy318/CohortHonestDiD/issues
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports: ggplot2, grid, Matrix, parallel, stats, utils, Rglpk, lpSolveAPI,

@@ -17,5 +17,5 @@ bibentry(
   author = person("Ziyi", "Liu"),
   year = "2026",
   note = paste("R package version", meta$Version),
-  url = "https://github.com/YOUR-GITHUB-USER/CohortHonestDiD"
+  url = "https://github.com/lzy318/CohortHonestDiD"
 )
