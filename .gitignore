@@ -1,0 +1,28 @@
+# R session and IDE files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj
+
+# Package build and check outputs
+*.tar.gz
+*.Rcheck/
+inst/doc/
+/doc/
+/Meta/
+
+# Vignette rendering outputs
+vignettes/*.html
+vignettes/*.R
+vignettes/*_files/
+vignettes/*_cache/
+
+# Raw input for data-raw/prepare-minimum-wage.R (not distributed)
+data-raw/*.rds
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
+Rplots.pdf

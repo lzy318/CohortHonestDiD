@@ -1,0 +1,21 @@
+citHeader("To cite CohortHonestDiD in publications, please cite the paper.",
+          "To cite the software itself, also cite the package.")
+
+bibentry(
+  bibtype = "Unpublished",
+  key = "liu2026cohort",
+  title = "Cohort-Anchored {HonestDiD}",
+  author = person("Ziyi", "Liu"),
+  year = "2026",
+  note = "Working paper"
+)
+
+bibentry(
+  bibtype = "Manual",
+  key = "CohortHonestDiD",
+  title = "{CohortHonestDiD}: Cohort-Anchored {HonestDiD} Sensitivity Analysis for Staggered Adoption",
+  author = person("Ziyi", "Liu"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/YOUR-GITHUB-USER/CohortHonestDiD"
+)

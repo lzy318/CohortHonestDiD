@@ -1,0 +1,13 @@
+^\.Rbuildignore$
+^\.gitignore$
+^\.git.*$
+^Architecture\.md$
+^LICENSE\.md$
+^README\.Rmd$
+^data-raw$
+^.*\.Rproj$
+^\.Rproj\.user$
+^doc$
+^Meta$
+^[^/]+\.tar\.gz$
+^[^/]+\.Rcheck$

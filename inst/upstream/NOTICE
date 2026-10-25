@@ -1,0 +1,29 @@
+Vendored numerical routines
+===========================
+
+R/arp-nuisance.R contains routines adapted from HonestDiD, authored by
+Ashesh Rambachan and Jonathan Roth. Its original author notice is retained
+in the source file. HonestDiD is distributed under the MIT license.
+The installed HonestDiD 0.2.6 LICENSE metadata is preserved verbatim in
+LICENSE-HonestDiD; the complete corresponding permission and warranty text
+is in LICENSE-HonestDiD-MIT.
+
+The remaining files (R/flci_core.R, R/inference_engine.R,
+R/inference_adapter.R, and R/restriction_geometry.R) are numerical
+extensions and adapters developed for the accompanying paper, Liu (2026),
+"Cohort-Anchored HonestDiD". No separate conflicting license or third-party
+copyright notice was found in those files. They are included under this
+package's license; the preceding HonestDiD notice continues to apply to any
+HonestDiD-derived portions.
+
+Package adaptations include private resource loading, RNG-state preservation,
+scalar target-basis and zero-nuisance LP cases, semidefinite-covariance
+support, scale-relative ARP variance checks, and scale-relative M=0 FLCI
+tie-breaking.
+
+Referenced packages (including LP, normal-probability, and matrix libraries)
+are dependencies and are not redistributed within these source files.
+
+Methodological reference:
+Rambachan, A. and Roth, J. (2023), "A More Credible Approach to Parallel
+Trends," Review of Economic Studies, doi:10.1093/restud/rdad018.

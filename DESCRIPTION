@@ -1,0 +1,28 @@
+Package: CohortHonestDiD
+Type: Package
+Title: Cohort-Anchored 'HonestDiD' Sensitivity Analysis for Staggered Adoption
+Version: 0.2.0
+Authors@R: c(person("Ziyi", "Liu", email = "zyliu2023@berkeley.edu", role = c("aut", "cre")), person("Ashesh", "Rambachan", role = "ctb", comment = "Upstream HonestDiD inference routines"), person("Jonathan", "Roth", role = "ctb", comment = "Upstream HonestDiD inference routines"))
+Description: Performs cohort-anchored sensitivity analysis for
+    difference-in-differences designs with staggered adoption, as proposed
+    by Liu (2026) "Cohort-Anchored HonestDiD" (working paper). The
+    restrictions of Rambachan and Roth (2023) <doi:10.1093/restud/rdad018>
+    are placed on each cohort's block bias, its untreated trend relative to
+    the units untreated when the cohort first adopts treatment, and a known
+    linear map carries block biases into the biases of the estimated
+    coefficients. Estimates imputation and Callaway-Sant'Anna cohort-period
+    effects with their joint covariance. Provides relative-magnitude and
+    smoothness restrictions, conditional and conditional least-favorable
+    confidence sets, fixed-length intervals, and aggregate benchmarks.
+License: MIT + file LICENSE
+URL: https://github.com/YOUR-GITHUB-USER/CohortHonestDiD
+BugReports: https://github.com/YOUR-GITHUB-USER/CohortHonestDiD/issues
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: ggplot2, grid, Matrix, parallel, stats, utils, Rglpk, lpSolveAPI,
+    mvtnorm, TruncatedNormal, pracma, purrr, matrixStats, tibble, withr (>= 3.0.0), rlang
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, roxygen2, CVXR, did
+VignetteBuilder: knitr
+LazyData: true
+Config/testthat/edition: 3
+RoxygenNote: 7.3.3
