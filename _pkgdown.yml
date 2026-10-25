@@ -1,0 +1,28 @@
+url: https://lzy318.github.io/CohortHonestDiD/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Estimation
+    contents:
+      - cohort_fit
+      - cohort_input
+      - build_W
+  - title: Sensitivity analysis
+    contents:
+      - cohort_sensitivity
+  - title: Plots
+    contents:
+      - plot_cohort
+      - paper_palette
+  - title: Data
+    contents:
+      - minimum_wage
+
+articles:
+  - title: Tutorials
+    navbar: ~
+    contents:
+      - getting-started
+      - detailed-guide
