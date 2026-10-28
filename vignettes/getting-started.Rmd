@@ -106,7 +106,9 @@ the estimate. Under the full-path restriction, the FLCI also uses the
 pre-treatment slope changes and is never longer than the post-only FLCI, but
 its coverage guarantee no longer holds when those changes exceed `M`, and its
 coverage deteriorates when some cohorts contain only a few units. Use it with
-caution.
+caution. `plot(flci, type = "weights")` shows the weights it puts on the
+pre-treatment coefficients; the detailed guide compares them with those of the
+post-only FLCI.
 
 ## 3. Dynamic and cohort-dynamic effects
 

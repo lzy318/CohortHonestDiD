@@ -85,7 +85,9 @@ A `cohort_sensitivity` object containing `intervals` (one row per
   connected confidence-set component), `estimates`, `settings`, and detailed
   `results`. Empty sets and numerical failures have explicit status rows.
   With \code{balanced = TRUE}, see the section "Balanced targets" for the
-  added settings and the \code{aggregation} element.
+  added settings and the \code{aggregation} element. For FLCI results,
+  \code{results[[k]]$weights} holds the weights of the linear estimator;
+  \code{\link{flci_weights}} tabulates them.
 }
 \description{
 Run robust inference without re-estimating the cohort-period coefficients.

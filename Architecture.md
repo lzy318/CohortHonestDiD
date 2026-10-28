@@ -3,10 +3,12 @@
 > Architecture of CohortHonestDiD 0.2.0. The package was formerly distributed as HonestDiDbyCohort (versions 0.1.0
 > and 0.1.1). Version 0.2.0 renames it, prepares the repository for GitHub, makes the default inference procedure
 > follow the paper's recommendation (C-LF under SD and RM, with the post-only restriction under SD), adds the
-> bias-reduced CR2 covariance as an option of `cohort_fit()`, and adds balanced targets and balanced aggregation to
-> `cohort_sensitivity()` (`balanced = TRUE`, with the cohort-side option `cohort.paths`); see [NEWS](NEWS.md). Calls
-> that state `method` explicitly, use the default CR1 covariance and keep the default `balanced = FALSE` return the
-> same numerical results as version 0.1.1. Blue nodes in the diagrams mark the code changed in 0.2.0.
+> bias-reduced CR2 covariance as an option of `cohort_fit()`, adds balanced targets and balanced aggregation to
+> `cohort_sensitivity()` (`balanced = TRUE`, with the cohort-side option `cohort.paths`), and adds the extractor
+> `flci_weights()` and the plot type `plot(result, type = "weights")`, which show the linear weights of FLCI results;
+> see [NEWS](NEWS.md). Calls that state `method` explicitly, use the default CR1 covariance and keep the default
+> `balanced = FALSE` return the same numerical results as version 0.1.1; the FLCI weights add no element to any
+> result. Blue nodes in the diagrams mark the code changed in 0.2.0.
 
 ## Overview
 
@@ -24,7 +26,11 @@ cohorts contain only a few units or clusters. With `cohort_sensitivity(balanced 
 balanced window, the relative periods observed for every cohort, and aggregate inference forms the aggregated event
 study only on that window, with cohort weights fixed across periods (balanced aggregation). Under cohort inference,
 `cohort.paths` chooses whether the restriction uses each cohort's full path (`"full"`, the default) or only its part
-inside the window (`"window"`). The package is written in R (>= 4.1.0). `Matrix` supports sparse estimation,
+inside the window (`"window"`). For FLCI results, `flci_weights()` tabulates the linear estimator's weights: the
+weights `v` on the pre-treatment coefficients, in the paper's form `v = v^P + D'gamma` (the post-only weights plus a
+combination of the pure pre-treatment second differences), or the weights `gamma` on those second differences, with
+each weight's contribution to the FLCI center, by element or summed by cohort; `plot(result, type = "weights")` draws
+them as a heatmap against the bound. The package is written in R (>= 4.1.0). `Matrix` supports sparse estimation,
 `ggplot2` supplies plots, `parallel` and `withr` run reproducible worker tasks, and a bundled private numerical engine
 under `inst/upstream/R/` uses the linear-programming (`Rglpk`, `lpSolveAPI`), normal-probability (`mvtnorm`,
 `TruncatedNormal`) and matrix packages listed in Imports. The optional nested FLCI solver uses `CVXR` (Suggests).
@@ -33,16 +39,16 @@ under `inst/upstream/R/` uses the linear-programming (`Rglpk`, `lpSolveAPI`), no
 
 | Path | Contents | In the built package |
 | --- | --- | --- |
-| `DESCRIPTION`, `NAMESPACE` | Package metadata (MIT license); 5 exported functions, 10 registered S3 methods, imports | Yes |
-| `R/` (23 files) | Package code; see Module Structure | Yes |
+| `DESCRIPTION`, `NAMESPACE` | Package metadata (MIT license); 6 exported functions, 10 registered S3 methods, imports | Yes |
+| `R/` (24 files) | Package code; see Module Structure | Yes |
 | `inst/upstream/R/` (5 files) | Bundled numerical engine, loaded at run time into a private environment | Yes |
 | `inst/upstream/NOTICE`, `LICENSE-HonestDiD`, `LICENSE-HonestDiD-MIT` | Attribution and MIT notices for the routines adapted from HonestDiD | Yes |
 | `inst/CITATION` | `citation("CohortHonestDiD")`: the paper and the package | Yes |
-| `man/` (7 Rd files) | Help pages `cohort_fit`, `cohort_input`, `cohort_sensitivity`, `build_W`, `plot_cohort`, `paper_palette`, `minimum_wage`; the argument reference of the package | Yes |
+| `man/` (8 Rd files) | Help pages `cohort_fit`, `cohort_input`, `cohort_sensitivity`, `flci_weights`, `build_W`, `plot_cohort`, `paper_palette`, `minimum_wage`; the argument reference of the package | Yes |
 | `data/minimum_wage.rda` | County panel of the minimum-wage application (15,988 rows, 28 columns) | Yes |
-| [`vignettes/getting-started.Rmd`](vignettes/getting-started.Rmd) | Short walkthrough of the minimum-wage application with the defaults: estimation, the default C-LF analysis under SD, dynamic and cohort-dynamic targets, the aggregate benchmark with a short paragraph on balanced aggregation (no chunk), RM (shown, not run), data requirements and diagnostics, a CR2 fit, and a short note on numerical results with pointers to the detailed guide and help pages for numerical controls and external estimates | Yes |
-| [`vignettes/detailed-guide.Rmd`](vignettes/detailed-guide.Rmd) | Assumptions and terms; estimation with the three estimators; weights, clusters, panel histories and the CR2 covariance; targets and representations, with a full-path FLCI comparison and an executed balanced example on the minimum-wage fit (subsection "Balanced targets and balanced aggregation": cohort inference with full and window paths, and aggregate inference); procedures and SD scopes; RM; reading results and outcome statuses; numerical controls and FLCI solvers; external estimates and `W`; plots. The procedure, RM, result-reading, control and external-input examples use a small artificial panel | Yes |
-| `tests/testthat.R`, `tests/testthat/` (15 files) | testthat (edition 3) suite: fits, external input, sensitivity, default procedures, CR2 covariance, balanced targets and balanced aggregation, RM, refinement, Conditional domains, boundaries, plots, method equivalence, session state, adversarial oracles | Yes |
+| [`vignettes/getting-started.Rmd`](vignettes/getting-started.Rmd) | Short walkthrough of the minimum-wage application with the defaults: estimation, the default C-LF analysis under SD, the other procedures and scopes (shown, not run; the FLCI paragraph points to `plot(flci, type = "weights")` and the detailed guide), dynamic and cohort-dynamic targets, the aggregate benchmark with a short paragraph on balanced aggregation (no chunk), RM (shown, not run), data requirements and diagnostics, a CR2 fit, and a short note on numerical results with pointers to the detailed guide and help pages for numerical controls and external estimates | Yes |
+| [`vignettes/detailed-guide.Rmd`](vignettes/detailed-guide.Rmd) | Assumptions and terms; estimation with the three estimators; weights, clusters, panel histories and the CR2 covariance; targets and representations, with a full-path FLCI comparison, an executed balanced example on the minimum-wage fit (subsection "Balanced targets and balanced aggregation": cohort inference with full and window paths, and aggregate inference) and an executed FLCI weights example (subsection "FLCI weights": the post-only and full-path weights `v`, the weights `gamma` with cell labels, a table of centers and sums of contributions, and the cohort sums); procedures and SD scopes; RM; reading results (with a pointer to `flci_weights()`) and outcome statuses; numerical controls and FLCI solvers; external estimates and `W`; plots (with the weights heatmap). The procedure, RM, result-reading, control and external-input examples use a small artificial panel | Yes |
+| `tests/testthat.R`, `tests/testthat/` (16 files) | testthat (edition 3) suite: fits, external input, sensitivity, default procedures, CR2 covariance, balanced targets and balanced aggregation, FLCI weights, RM, refinement, Conditional domains, boundaries, plots, method equivalence, session state, adversarial oracles | Yes |
 | [`README.md`](README.md), [`NEWS.md`](NEWS.md), `LICENSE` | Repository front page, change log, CRAN-style license stub | Yes |
 | `LICENSE.md` | Full MIT license text | No (build-ignored) |
 | `Architecture.md` | This file | No (build-ignored) |
@@ -62,6 +68,7 @@ graph TD
         Sens["sensitivity.R"]
         Methods["methods.R"]
         Plot["plot / palette"]
+        Weights["weights.R"]
     end
     subgraph Estimate["Estimation"]
         Imp["estimate_imp.R"]
@@ -133,6 +140,10 @@ graph TD
     Sens --> Methods
     Input --> Plot
     Sens --> Plot
+    Sens --> Weights
+    FLCI -- stored weights --> Weights
+    Plot --> Weights
+    Weights --> Targets
     style Input fill:#1e90ff,stroke:#1565c0,color:#fff
     style Sens fill:#1e90ff,stroke:#1565c0,color:#fff
     style Methods fill:#1e90ff,stroke:#1565c0,color:#fff
@@ -146,18 +157,22 @@ graph TD
     style SD fill:#1e90ff,stroke:#1565c0,color:#fff
     style Geometry fill:#1e90ff,stroke:#1565c0,color:#fff
     style Adapter fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Weights fill:#1e90ff,stroke:#1565c0,color:#fff
 ```
 
 Arrows describe calls or data dependencies; `covariance.R` calls the operator-score helper in `estimate_imp.R`, which
-serves all three estimators. Bundled engine files live under `inst/upstream/R/`; all other modules live under `R/`.
-The inference adapters reach engine functions through the private environment that `utils-engine.R` builds ("loads"
-edges). Blue nodes are the files whose code changed in 0.2.0:
+serves all three estimators. `weights.R` reads FLCI results: the weights that `flci.R` stores in each result
+("stored weights") and the representation that `targets.R` rebuilds; the weights plot in `plot.R` calls it. Bundled
+engine files live under `inst/upstream/R/`; all other modules live under `R/`. The inference adapters reach engine
+functions through the private environment that `utils-engine.R` builds ("loads" edges). Blue nodes are the files
+whose code changed in 0.2.0:
 
 - `input.R`, `sensitivity.R`, `covariance.R` and `methods.R` carry the new defaults, the covariance option, the
   `balanced` and `cohort.paths` options, and the printed covariance and balanced-window lines;
 - `targets.R` computes the balanced window, the balanced targets, the window-path cohort representation and the
-  balanced aggregate representation; `plot.R` draws balanced results on the window (`palette.R`, in the same node, is
-  unchanged);
+  balanced aggregate representation; `plot.R` draws balanced results on the window and, with `type = "weights"`, the
+  FLCI weights (`palette.R`, in the same node, is unchanged);
+- `weights.R` (new) holds `flci_weights()` and its helpers (see "FLCI weights detail" below);
 - `inference_sd.R`, `inference_rm.R`, `restriction_geometry.R` and `inference_adapter.R` pass the window's lower end
   to the restriction operators under `cohort.paths = "window"` (see "Balanced detail" below);
 - `parallel.R`, `utils-engine.R`, `inference_rm.R` and `inference_engine.R` are the four files that name the package
@@ -165,7 +180,8 @@ edges). Blue nodes are the files whose code changed in 0.2.0:
 
 Apart from the balanced options, the numerical code of the blue inference and engine files is unchanged. With the
 default `balanced = FALSE` the balanced code is not entered: targets, representations and restriction operators are
-built by the same operations as before the options existed.
+built by the same operations as before the options existed. The FLCI weights changed no inference code: `flci.R`
+and the engine store the same weights as before, and `weights.R` only reads them.
 
 ### Module Reference
 
@@ -173,7 +189,8 @@ built by the same operations as before the options existed.
 | --- | --- | --- | --- | --- |
 | `R/input.R` | API | Validate and complete the panel registry; forward-fill D; prepare working weights and observations; validate the covariance option; documents `minimum_wage` | `cohort_fit` | Yes: `covariance` argument (after `...`), `covariance_convention` built from the type, `cluster_shares` on CR2 fits, covariance type named in the two-cluster error; help text, including the `@source` of `minimum_wage` |
 | `R/external_input.R` | API | Align named coefficients, covariance, `W` and normalization constraints | `cohort_input` | Help text only (`vcov` is used as supplied) |
-| `R/sensitivity.R` | API | Validate options and resolve the method and scope defaults; set up the balanced window; form target/bound tasks; assemble public status and interval rows, the settings and, for balanced aggregate results, the `aggregation` element | `cohort_sensitivity` | Yes: `method = NULL` resolves to C-LF under SD and RM (before 0.2.0 the SD default was the full-path FLCI); formals `balanced = FALSE` and `cohort.paths = NULL` appended after `control`, their validation after all existing checks, the window set-up, and the settings fields and `aggregation` element of balanced results; help text, including the `control` pointer to the detailed guide's "Numerical controls" section and the section "Balanced targets" |
+| `R/sensitivity.R` | API | Validate options and resolve the method and scope defaults; set up the balanced window; form target/bound tasks; assemble public status and interval rows, the settings and, for balanced aggregate results, the `aggregation` element | `cohort_sensitivity` | Yes: `method = NULL` resolves to C-LF under SD and RM (before 0.2.0 the SD default was the full-path FLCI); formals `balanced = FALSE` and `cohort.paths = NULL` appended after `control`, their validation after all existing checks, the window set-up, and the settings fields and `aggregation` element of balanced results; help text, including the `control` pointer to the detailed guide's "Numerical controls" section, the section "Balanced targets" and a value sentence pointing from `results[[k]]$weights` to `flci_weights()` |
+| `R/weights.R` | API | FLCI weights: for each target with weights, rebuild the representation the result used, build its second-difference operators, the post-only weights `v^P`, the estimated second differences and the post-only center in closed form, check them against the stored `gamma` and coefficient weights, and return `v = v^P + D'gamma` or `gamma` with estimates and contributions, by element or summed by cohort | `flci_weights` | Yes (new file): `flci_weights`, `.hc_flci_operators`, `.hc_flci_reconstruct`, `.hc_flci_cohort_sums`, `.hc_flci_weights_method`, `.hc_flci_weights_no_cohorts`, `.hc_flci_weights_fail`, `.hc_flci_weights_empty`; constants `.hc_weights_rank_tolerance` (1e-10) and `.hc_weights_check_tolerance` (1e-8) |
 | `R/estimate_imp.R` | Estimation | Sparse outcome operator and untreated unit/time fixed-effect correction; operator application and cluster scores | None | No |
 | `R/estimate_cs_nyt.R`, `R/estimate_cs_nt.R` | Estimation | Weighted paired long differences with not-yet-treated or never-treated comparisons | None | No |
 | `R/covariance.R` | Estimation | Covariance option validation; cohort-period centering, cluster scores, and the CR1 or CR2 covariance; exact zero scores for single-cluster cells; CR2 shares and factors of (cluster, cohort group) pairs | None | Yes: new `.hc_covariance_type` and `.hc_cr2_adjustment`; `type` argument of `.hc_covariance` |
@@ -187,7 +204,7 @@ built by the same operations as before the options existed.
 | `R/utils-conditional-search.R` | Tasks | Conditional domain construction, bilateral expansion, interior and endpoint audits, remembered acceptance checks and range diagnostics | None | No |
 | `R/inference_support.R` | Inference | Common task entry; prehistory and deterministic-target checks | None | No |
 | `R/inference_sd.R` | Inference | SD restriction and plug-in set; FLCI, Conditional or C-LF; C-LF support bounds prepared once for all attempts | None | Yes: passes the representation's `restriction_window` to `v3_sd_restriction` as `pre_window` (one line) |
-| `R/flci.R` | Inference | FLCI rule and interval adapter | None | No |
+| `R/flci.R` | Inference | FLCI rule and interval adapter; stores each result's `weights` (`gamma` and the coefficient weights), which `flci_weights()` reads | None | No |
 | `R/inference_rm.R` | Inference | Signed RM components, optional component workers and component union | None | Package-name string (3 sites); `.hc_infer_rm` counts the signed components from the benchmark pairs inside the window and passes `pre_window` to the scenario table and the plug-in restriction |
 | `inst/upstream/R/restriction_geometry.R` | Private engine | Coordinate parsing, first/second differences, SD and RM restriction matrices, RM signed scenarios | None | Yes: optional `pre_window = NULL` in `v3_first_difference_operator`, `v3_second_difference_operator`, `v3_sd_restriction`, `v3_rm_scenario_table`, `v3_rm_component_restriction` and `v3_rm_plugin_restriction`; it drops only pure pre-treatment rows that reach before the window |
 | `inst/upstream/R/inference_adapter.R` | Private engine | Normalization reduction, plug-in sets, ARP geometry, RM union calculations, reusable support context and budgeted sentinel tests | None | Header comment; three lines in `v3_prepare_rm_union` and `v3_clf_rm_union` pass `restriction_window` to the RM scenario table and plug-in restriction (the file keeps its CRLF line endings and line count) |
@@ -195,10 +212,10 @@ built by the same operations as before the options existed.
 | `inst/upstream/R/flci_core.R` | Private engine | Folded-normal objective, direct/nested optimization and PSD limits | None | Header comment only |
 | `inst/upstream/R/arp-nuisance.R` | Private engine | Gaussian moment-inequality (ARP) calculations adapted from HonestDiD | None | No |
 | `R/methods.R` | Output | S3 accessors; print/summary with the covariance label and, for balanced results, the balanced-window line; Conditional searched-range tables | `coef`, `vcov`, `print` and `summary` methods | Yes: new `.hc_covariance_label`; one `Covariance:` line in the four print methods; summary objects gain `covariance`; new `.hc_balanced_label` and one balanced-window line in `print.cohort_sensitivity` and `print.summary_cohort_sensitivity` |
-| `R/plot.R`, `R/palette.R` | Output | Component-preserving plots and paper colors; bounded-search plot captions | `plot` methods; `paper_palette` | `plot.cohort_sensitivity` only: balanced-window caption sentence; conventional points limited to the window for dynamic and cohort-dynamic targets |
-| `R/imports.R`, `NAMESPACE`, `DESCRIPTION` | Package | Import declarations, exports, S3 registrations and metadata | 5 exported functions | `DESCRIPTION` only (name, version, title, description, URLs) |
-| `data/`, `man/`, `vignettes/`, `README.md`, `NEWS.md`, `inst/CITATION` | Data/docs | Application data, help pages, two vignettes, front page, change log, citation | `minimum_wage` data | Package name in vignettes; rewritten README; new NEWS entry and CITATION; `minimum_wage` help source; new defaults and the CR2 option in the `cohort_fit`, `cohort_sensitivity` and `cohort_input` help pages, README, NEWS and both vignettes; both vignettes rewritten and shortened, and the detailed guide's argument reference removed (the help pages document every argument); the `balanced` and `cohort.paths` options in the `cohort_sensitivity` help page (arguments, section "Balanced targets", example), one README paragraph, a NEWS bullet, a getting-started paragraph, and a detailed-guide subsection `{#balanced}` with an executed example and a `result$aggregation` row in its "Outcomes and statuses" table |
-| `tests/testthat.R`, `tests/testthat/` | Tests | Regression and independent public-interface checks | None | Package name in `testthat.R` and `test-session-state.R`; `method = "FLCI"` added to the calls that relied on the earlier SD default; new `test-defaults.R`, `test-covariance-cr2.R` and `test-balanced.R` |
+| `R/plot.R`, `R/palette.R` | Output | Component-preserving plots and paper colors; bounded-search plot captions; FLCI weights heatmap | `plot` methods; `paper_palette` | `plot.cohort_sensitivity` only: balanced-window caption sentence; conventional points limited to the window for dynamic and cohort-dynamic targets; formals `type = c("sets", "weights")`, `weights`, `by`, `targets = NULL`, `labels = FALSE` appended after `color`, with `type = "sets"` (default) running the earlier body unchanged; new internal `.hc_plot_weights` |
+| `R/imports.R`, `NAMESPACE`, `DESCRIPTION` | Package | Import declarations, exports, S3 registrations and metadata | 6 exported functions | `DESCRIPTION` (name, version, title, description, URLs); `NAMESPACE` gains `export(flci_weights)` |
+| `data/`, `man/`, `vignettes/`, `README.md`, `NEWS.md`, `inst/CITATION` | Data/docs | Application data, help pages, two vignettes, front page, change log, citation | `minimum_wage` data | Package name in vignettes; rewritten README; new NEWS entry and CITATION; `minimum_wage` help source; new defaults and the CR2 option in the `cohort_fit`, `cohort_sensitivity` and `cohort_input` help pages, README, NEWS and both vignettes; both vignettes rewritten and shortened, and the detailed guide's argument reference removed (the help pages document every argument); the `balanced` and `cohort.paths` options in the `cohort_sensitivity` help page (arguments, section "Balanced targets", example), one README paragraph, a NEWS bullet, a getting-started paragraph, and a detailed-guide subsection `{#balanced}` with an executed example and a `result$aggregation` row in its "Outcomes and statuses" table; the FLCI weights in a new help page `flci_weights`, the `plot_cohort` page (new arguments, details, value) and the `cohort_sensitivity` value section, one README sentence, a NEWS bullet, a getting-started pointer in the FLCI paragraph, and a detailed-guide subsection `{#flci-weights}` with executed minimum-wage chunks plus two cross-references (sections 6 and 9) |
+| `tests/testthat.R`, `tests/testthat/` | Tests | Regression and independent public-interface checks | None | Package name in `testthat.R` and `test-session-state.R`; `method = "FLCI"` added to the calls that relied on the earlier SD default; new `test-defaults.R`, `test-covariance-cr2.R`, `test-balanced.R` and `test-flci-weights.R` |
 
 ---
 
@@ -435,12 +452,103 @@ other aggregate representation.
 | `.hc_adaptive_search` | `utils-search.R` | SD/RM C-LF adapters | Per-attempt inversion callback | No | Double regular grid intervals for eligible unresolved statuses within the limits |
 | `.hc_conditional_domain`, `.hc_conditional_search` | `utils-conditional-search.R` | SD/RM Conditional adapters | Cached point tests, fixed-domain inversion and endpoint audits | No | Search concentric domains with fixed regular spacing and require two successive adjacent-domain agreements; finer retries reuse the same cache and visited-range history |
 | `.hc_engine_grid` | `utils-engine.R` | SD/RM adapters | Regular grid/profile anchors, with optional certified bounds | No | Carry regular spacing separately; pad supplied C-LF support by the endpoint probe margin |
-| `.hc_infer_flci` | `flci.R` | SD adapter | `sd_flci_prepare`, `sd_flci_interval` | No | Expose the optimized rule and interval diagnostics |
+| `.hc_infer_flci` | `flci.R` | SD adapter | `sd_flci_prepare`, `sd_flci_interval` | No | Expose the optimized rule and interval diagnostics (including `tie.break`); store `weights$gamma` and `weights$coefficients`, the weights mapped back from the reduced space to the representation's coordinates (read by `flci_weights()`, see "FLCI weights detail") |
 | `sd_flci_prepare` | Private `inference_engine.R` | FLCI adapter | Private direct/nested FLCI solvers | No | Handle PSD and exact zero-noise limits without jitter |
 | `sd_bind_arp_problem`, `sd_arp_invert` | Private `inference_engine.R` | SD/RM adapters | Gaussian tests, calibration, explicit expansion spacing and shared point tests | No | Compute Conditional/C-LF sets without resimulating calibration on retry |
 | `v3_clf_rm_union`, `v3_memoize_rm_union_test`, `v3_rm_verify_support_sentinels` | Private `inference_adapter.R` | RM adapter | Prepared component/support context, cached union tests and separately keyed sentinel tests | `v3_clf_rm_union` (and the `v3_prepare_rm_union` it calls): `restriction_window` passed to the scenario table and plug-in restriction | Reuse RM calibration and account for actual point work across refinements |
 | `v3_rm_lf_component_support` | Private `inference_adapter.R` | RM adapter and SD C-LF | Primal/dual-checked support endpoint LPs | No | Bound the necessary LF first-stage support with the realized cutoff |
 | `.hc_engine_result`, `.hc_engine_failure` | `utils-engine.R` | Inference adapters | Component/status assembly | No | Keep empty, unbounded, disconnected and unsupported results distinct |
+
+### FLCI weights detail
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+graph TD
+    Plot["plot.cohort_sensitivity"] --> Type{"type?"}
+    Type -- sets --> Sets["set plot body"]
+    Type -- weights --> PW[".hc_plot_weights"]
+    PW --> Method[".hc_flci_weights_method"]
+    PW --> NoCoh[".hc_flci_weights_no_cohorts"]
+    PW --> FW["flci_weights"]
+    FW --> Method
+    FW --> NoCoh
+    FW --> Rep[".hc_representation"]
+    FW --> Ops[".hc_flci_operators"]
+    FW --> Rec[".hc_flci_reconstruct"]
+    Infer[".hc_infer_flci"] --> Stored["stored weights"]
+    Stored --> Rec
+    Ops --> Rec
+    Rec --> Fail[".hc_flci_weights_fail"]
+    FW --> Fail
+    FW --> Sums[".hc_flci_cohort_sums"]
+    FW --> Empty[".hc_flci_weights_empty"]
+    PW --> Labels[".hc_cohort_labels"]
+    PW --> Palette["paper_palette"]
+    PW --> Heat["tile and text layers"]
+    style Plot fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Type fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Sets fill:#1e90ff,stroke:#1565c0,color:#fff
+    style PW fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Rep fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Method fill:#1e90ff,stroke:#1565c0,color:#fff
+    style NoCoh fill:#1e90ff,stroke:#1565c0,color:#fff
+    style FW fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Ops fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Rec fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Fail fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Sums fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Empty fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Heat fill:#1e90ff,stroke:#1565c0,color:#fff
+```
+
+`flci_weights()` is the public entry point; the weights plot calls it after its own argument checks. The extractor
+only reads the result: it calls the unchanged `.hc_representation` with the result's own settings, so it sees the
+representation the FLCI used, and it accepts the weights that `.hc_infer_flci` stored ("stored weights") only after
+reconstructing them. The set plot (`type = "sets"`, the default) runs the earlier body. `.hc_representation` and
+the set-plot body are blue for their balanced changes (see "Balanced detail"); the FLCI weights did not change them.
+`.hc_infer_flci`, `.hc_cohort_labels` and `paper_palette` are unchanged.
+
+**What is computed.** For one target, the representation gives the coefficients `b` (`betahat`), the bias map `W`,
+the target weights `l` and the normalization `N`: under cohort inference those of the fit (or, under
+`cohort.paths = "window"`, of the window-path cells, with the window's lower end `L`); under aggregate inference
+those of the aggregated path (one internal path `g1`, `W = I`, target `l_A`). `P` and `Q` are its pre- and
+post-treatment cells, each ordered by cohort and then by relative period.
+
+- Second differences along each path, whose relative periods are consecutive: from the third cell on, the row
+  `d_{g,e}` has `+1` at `(g, e)`, `-2` at `(g, e - 1)` and `+1` at `(g, e - 2)`. Rows with `e <= 0` are the pure
+  pre-treatment second differences (under `cohort.paths = "window"` only those with `e - 2 >= L`, the rows of the
+  windowed restriction); their columns on `P` form `D_PP` (`J` rows, ordered by cohort and then `e`, which is the
+  engine's order of `gamma`; element names `d2_g<g>_s<e>`). Rows with `e >= 1` are post-connected, one per post
+  cell, ordered like `Q`; their columns form `D_QP` and the unit lower-triangular `D_QQ`.
+- `xi = solve(t(D_QQ), t(W_QQ) %*% l_Q)` and `vP = t(D_QP) %*% xi - t(W_QP) %*% l_Q`: the post-only weights on the
+  pre-treatment coefficients (paper `v^P`). They subtract each cohort's linear extrapolation from its last two
+  pre-treatment periods and, under CS-NYT, undo the base-period correction of `W`; they do not depend on `M`.
+- `zhat = D_PP %*% b_P` (the estimated pure pre-treatment second differences) and the post-only center
+  `c0 = sum(vP * b_P) + sum(l_Q * b_Q)`.
+- For each task with weights: `gamma` is the stored `weights$gamma` (zeros for the post-only FLCI) and
+  `v = vP + t(D_PP) %*% gamma` (paper `v = v^P + D'gamma`).
+- Checks before anything is reported: `length(gamma) == J`; if the engine named `gamma` (it does so on its analytic
+  `M = 0` branch), the names are `d2_g<g>_s<e>_pos` in the same order; and `Pi %*% v` equals the stored
+  `weights$coefficients` on `P` within `1e-8 * max(1, max|w_P|)`, where `Pi` is the orthogonal projector onto the null
+  space of the normalization's pre-treatment columns (QR rank tolerance 1e-10). Any failure stops with the
+  reconstruction error.
+- Contributions are `weight * estimate`. They add up to `center - c0` over the `gamma` rows and to
+  `center - estimate` (the conventional estimate) over the `v` rows of a task.
+
+| Function | Defined In | Called By | Calls | Changed in 0.2.0 | Purpose |
+| --- | --- | --- | --- | --- | --- |
+| `flci_weights(x, weights, by)` | `weights.R` | User; `.hc_plot_weights` | The checks below, `.hc_representation`, `.hc_flci_operators`, `.hc_flci_reconstruct`, `.hc_flci_cohort_sums`, `.hc_flci_weights_empty`, `.hc_flci_weights_fail` | Yes (new, exported) | Check the object, method and framework; loop over targets `j` and bounds `m` (task `k = (j - 1) * length(settings$M) + m`); list tasks without weights in `missing`; rebuild the operators once per target that has weights; one `centers` row and the element rows per task with weights; return the data frame with its attributes (see Notes). It never messages or warns |
+| `.hc_flci_weights_method` | `weights.R` | `flci_weights`, `.hc_plot_weights` | None | Yes (new) | Error unless `settings$method` is `"flci"`; the message names Conditional or C-LF |
+| `.hc_flci_weights_no_cohorts` | `weights.R` | `flci_weights`, `.hc_plot_weights` | None | Yes (new) | Error for `by = "cohort"` under aggregate inference |
+| `.hc_representation` | `targets.R` | `cohort_sensitivity`; `flci_weights` | See "Balanced detail" | Yes for the balanced options (see "Balanced detail"); unchanged by the FLCI weights, which only add a caller | Called with `settings$window` and, for balanced cohort inference, `settings$cohort.paths` (otherwise `"full"`), as `cohort_sensitivity()` called it |
+| `.hc_flci_operators` | `weights.R` | `flci_weights`, once per target with weights | `solve`, `qr`, `crossprod` | Yes (new) | Second-difference rows (pure, post-connected, or outside the window), `D_PP`, `xi`, `vP`, `zhat`, `c0`, `Pi`, and the labels of the coefficient and second-difference rows. Errors, which `flci_weights` turns into the reconstruction error, if a post cell has no post-connected row, the triangular solve fails or a value is not finite |
+| `.hc_flci_reconstruct` | `weights.R` | `flci_weights`, once per task with weights | `.hc_flci_weights_fail` | Yes (new) | The checks above; returns `v` named by the pre-treatment coordinates |
+| `.hc_flci_cohort_sums` | `weights.R` | `flci_weights` (`by = "cohort"`), once per task | None | Yes (new) | Per cohort with at least one row: `elements`, `weight` (sum), `l1` (sum of absolute weights), `share` (`l1` over the task's total, `NA` when that is 0), `contribution` (sum), `tie.break` |
+| `.hc_flci_weights_empty`, `.hc_flci_weights_fail` | `weights.R` | `flci_weights`, `.hc_flci_reconstruct` | None | Yes (new) | The 0-row data frame with the documented columns and types; the reconstruction error |
+| `.hc_infer_flci` | `flci.R` | SD adapter | Engine FLCI routines | No | Stores `weights$gamma` (the engine's `gamma`; zeros for the post-only FLCI) and `weights$coefficients` (the weights mapped back from the reduced space: the projection of `v` orthogonal to the normalization, with the target weights on the post cells), and `diagnostics$tie.break` |
+| `plot.cohort_sensitivity` | `plot.R` | User | `.hc_plot_weights` or the set-plot body | Yes | Match `type` first. `"weights"`: error if `identified.set` or `color` is supplied, then `.hc_plot_weights` (a missing `ylab` means the default label). `"sets"`: error if `weights`, `by`, `targets` or `labels` is supplied, then the earlier body statement for statement |
+| `.hc_plot_weights` | `plot.R` | `plot.cohort_sensitivity` | `.hc_flci_weights_method`, `.hc_flci_weights_no_cohorts`, `flci_weights`, `.hc_cohort_labels`, `paper_palette` | Yes (new) | Check `labels`, `targets`, the method, `by` and `cohorts` under aggregate inference; for `weights = "gamma"` on a post-only result print a message and return `NULL` invisibly; check `M`; select tasks by `targets` and by `M` (the set plot's matching rule, relative 1e-10); error if nothing is selected or every selected task failed; keep the selected rows of `flci_weights(x, weights, by)` (message and invisible `NULL` if no `gamma` rows exist), filter `cohorts`, and build the heatmap |
+| Tile and text layers | `plot.R` | `.hc_plot_weights` | `ggplot2` | Yes (new) | `geom_tile` (grey borders), optional `geom_text` labels, the diverging fill, discrete axes without expansion, facets, theme and caption (see Notes) |
 
 ### Package-name lookups
 
@@ -517,19 +625,26 @@ graph TD
     ARP --> Refine["Shared-budget refinement"]
     Refine --> Result
     Fail --> Result
-    Result --> Plot["Summary and paper plots"]
+    Result --> Output{"Which output?"}
+    Output -- sets, summary --> Plot["Summary and paper plots"]
+    Output -- FLCI weights --> Weights["v or gamma per element"]
+    Weights --> Heat["Table or heatmap"]
     style CovType fill:#1e90ff,stroke:#1565c0,color:#fff
     style CR2 fill:#1e90ff,stroke:#1565c0,color:#fff
     style Given fill:#1e90ff,stroke:#1565c0,color:#fff
     style Default fill:#1e90ff,stroke:#1565c0,color:#fff
     style Balanced fill:#1e90ff,stroke:#1565c0,color:#fff
     style Window fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Output fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Weights fill:#1e90ff,stroke:#1565c0,color:#fff
+    style Heat fill:#1e90ff,stroke:#1565c0,color:#fff
 ```
 
-Blue stages changed in 0.2.0: the covariance option, the default procedure and the balanced option. Before 0.2.0 a
-call without `method` under SD took the FLCI branch with the full-path restriction. The "Window" stage restricts the
-targets to periods 1 to `S` and, depending on the framework and `cohort.paths`, forms the aggregate path on `L..S`
-or truncates the cohort paths (see "Balanced detail").
+Blue stages changed in 0.2.0: the covariance option, the default procedure, the balanced option and the FLCI weights.
+Before 0.2.0 a call without `method` under SD took the FLCI branch with the full-path restriction. The "Window" stage
+restricts the targets to periods 1 to `S` and, depending on the framework and `cohort.paths`, forms the aggregate
+path on `L..S` or truncates the cohort paths (see "Balanced detail"). The FLCI weights branch exists only for results
+computed with `method = "FLCI"`; it reads a finished result and changes nothing in it (see "FLCI weights detail").
 
 | Stage | Purpose | Key Dependencies | Changed in 0.2.0 |
 | --- | --- | --- | --- |
@@ -544,6 +659,7 @@ or truncates the cohort paths (see "Balanced detail").
 | C-LF outer domain | Scan the necessary first-stage support using its certified finite bounds plus the endpoint probe margin | SD adapter and the LF support LP helper | No |
 | Conditional search domain | Invariant initial contrast/scale, bilateral expansion and mandatory adjacent-domain agreements; no certified global support | `utils-conditional-search.R` and the shared point cache | No |
 | Output | Keep each connected component and report failures without successful bounds; printed headers name the procedure, scope and covariance | S3 methods/plots | Covariance line in print/summary; for balanced results, the balanced-window line, settings fields, `aggregation` element and plot caption |
+| FLCI weights | For FLCI results: rebuild each target's representation, reconstruct `v = v^P + D'gamma` (or take `gamma`) with estimates and contributions, by element or by cohort; tabulate or draw a heatmap against the bound | `weights.R`, `plot.R`, `targets.R` | Yes (new; reads results only) |
 
 ---
 
@@ -611,6 +727,32 @@ or truncates the cohort paths (see "Balanced detail").
   `A E`, with `E` a basis of the null space of the fit's normalization: for imputation it has no row unless the window
   covers every cohort's whole pre-treatment path; for CS-NYT and CS-NT it is the `s = 0` row. The aggregated
   coefficients and covariance are `A betahat` and the symmetrized `A Sigma A'`.
+- **FLCI weights as a read-only view.** `flci_weights()` and the weights plot add no element to results and change
+  neither `cohort_sensitivity()` nor the engine. The extractor recomputes, for each target, the representation and
+  its second-difference operators from the result's own settings, computes the post-only weights and center in
+  closed form (one triangular solve and a few products), and combines them with the stored `gamma`. It reports
+  weights only after checking them against what the FLCI stored (the length and names of `gamma`, and the
+  projection of `v` compared with the stored coefficient weights); a result it cannot reproduce gives an error, not
+  a guess.
+- **The paper's representative of `v`.** Each cohort's pre-treatment coefficients satisfy one exact normalization
+  (CS: the coefficient at `s = 0` is zero; imputation: they sum to zero), so the weights on them are unique only up
+  to that direction. The FLCI stores the representative orthogonal to the normalization; `flci_weights()` reports
+  the paper's form `v = v^P + D'gamma`. In that form the post-only weights sit only on each cohort's last two
+  pre-treatment coefficients (`s = -1` and `s = 0`), plus, under CS-NYT, the cells of the base-period correction
+  (imputation and CS-NYT differ only in those cells); they are constant in `M`, so the full-path and post-only
+  heatmaps can be compared cell by cell. The estimate, the center, `gamma` and each cohort's sum of contributions
+  are the same for every representative; the per-cell weights and the cohort sums `weight`, `l1` and `share` of `v`
+  depend on it. Under imputation `D_PP' gamma` already has zero cohort sums, so the full-path and post-only stored
+  weights differ by exactly `D_PP' gamma`.
+- **Heatmaps follow the paper's figure conventions.** Columns are the computed bounds as a discrete axis, rows the
+  relative periods with the earliest at the top, cohorts in adoption order from the top, one panel per target. The
+  fill is diverging and symmetric around zero, blue (`#0072B2`) to white to vermilion (`#D55E00`) from
+  `paper_palette("representation")`, so exact zeros are white. Captions state what is shown, the SD scope and the
+  framework, and add the tie-break, all-zero, failed-result, unbalanced-panel and balanced-window sentences when
+  they apply.
+- **Type dispatch keeps the set plot.** The five new formals of `plot.cohort_sensitivity` follow `color`, so
+  positional calls are unaffected; `type` is matched first, and each type rejects the other type's arguments when
+  they are supplied explicitly. With `type = "sets"` the earlier statements run unchanged.
 - **Actual histories in estimation.** Sparse operators encode observed comparisons. Unbalanced samples keep a warning
   because their fixed-mass bias map is an approximation.
 - **Explicit numerical support.** Singular covariance alone is allowed. Unsupported deterministic Conditional/C-LF
@@ -718,6 +860,68 @@ or truncates the cohort paths (see "Balanced detail").
   cohort's difference between the two estimators' coefficients is then constant across the window, and SD and RM
   do not respond to a constant shift of the aggregated path. The help page and the detailed guide therefore say
   "in general".
+- **FLCI weights objects.** With `by = "element"`, `flci_weights()` returns one row per task with weights and
+  element, with columns `target` and `label` (character), `M` (double), `cohort` (integer; `NA` under aggregate
+  inference), `relative_period` (integer: the coefficient's period, or the last period `e` of the second
+  difference), `element` (character: the coefficient name such as `delta_pre_g4_s-2`, or `d2_g<g>_s<e>`, with
+  `g1` under aggregate inference), `weight`, `estimate` (`betahat` or `zhat`), `contribution` (doubles) and
+  `tie.break` (logical). Coefficient rows cover every pre-treatment coefficient of the representation, including
+  each cohort's normalized cell (CS: `s = 0`, whose coefficient and contribution are zero) and, under
+  `cohort.paths = "window"`, the coefficients before `L`, on which CS-NYT weights can load; `gamma` rows are the `J`
+  pure pre-treatment second differences, all zero for a post-only FLCI. With `by = "cohort"` (cohort inference only)
+  the columns are `target`, `label`, `M`, `cohort`, `elements`, `weight`, `l1`, `share`, `contribution` and
+  `tie.break`. Rows follow the targets, then the sorted bounds, then cohort and period. Attributes: `weights`, `by`,
+  `framework`, `full.path`, `centers` (`target`, `label`, `M`, `estimate`, `post.only.center`, `center`; one row per
+  task with weights) and `missing` (`target`, `label`, `M`, `status`; one row per task without weights). When
+  nothing qualifies (every task failed, or `gamma` with `J = 0`) the data frame has 0 rows with the same columns and
+  types. `tie.break` is `TRUE` when the task's `diagnostics$tie.break` is `"minimum_euclidean_norm_gamma"`: several
+  weight vectors give the same FLCI length (for example at `M = 0` when the covariance of `zhat` is singular), and
+  the FLCI took the one with the smallest Euclidean norm of `gamma`. In the minimum-wage application (imputation,
+  ATT) the post-only weights are 0.699 and -0.979 at `s = -1` and `s = 0` of cohort 2004 (0.489 and -0.815 for
+  2006, 0.476 and -0.951 for 2007) and zero elsewhere; the full-path `gamma` is positive on all eight second
+  differences at `M = 0`, nonzero only for 2004's at `M = 0.005` and `0.01`, and zero from `M = 0.015`, where the
+  full-path and post-only FLCIs coincide.
+- **FLCI weights plot.** The plot data are the selected rows of `flci_weights()` plus `value` (`weight` by element,
+  `contribution` by cohort), `column` (the bound labels `format(M, trim = TRUE, drop0trailing = TRUE)`, with 15
+  digits if those labels collide), `row` (relative periods or cohort labels, leveled so that the earliest is at the
+  top), `cohort_label` (cohort inference), `target_label`, `text` (`formatC(value, format = "fg", digits = 2)`, empty
+  for zeros) and `dark` (`|value| > lim / 2`, drawn in white). `lim = max|value|`, or 1 when that is 0. Element plots
+  under cohort inference use `facet_grid(cohort_label ~ target_label)` with free row heights and the cohort strips
+  on the left; the others have one row of target panels. Defaults: x label `M`; y label `Relative period`,
+  `Last period of the second difference` or `Cohort`; legend `Weight v`, `Weight gamma` or `Contribution`. The
+  caption starts with `<what>; <scope>; <framework> inference.`, where the scope is `SD, full path` or
+  `SD, post-only` (for example `FLCI weights v on the pre-treatment coefficients; SD, full path; cohort
+  inference.`), then `White cells are zero weights.` (element) or `White cells are zero. The cohort sums add up to
+  the FLCI center minus the conventional estimate.` (`... minus the post-only center.` for `gamma`), and when they
+  apply `At M = <bounds>, several weight vectors give the same FLCI length; the one with the smallest Euclidean
+  norm of gamma is shown.`, `All weights gamma are zero at the selected bounds: the full-path FLCI equals the
+  post-only FLCI.`, `<n> failed result(s) without weights are not shown; inspect summary().`, `Unbalanced-panel
+  approximation.` and the balanced-window sentence of the set plot; it is wrapped at 95 characters.
+- **FLCI weights messages.** `flci_weights()`, in this order: `x must be a cohort_sensitivity object.`; the
+  `match.arg()` errors for `weights` and `by`; `FLCI weights exist only for results with method = 'FLCI'; this
+  result used Conditional.` (or `C-LF.`); `by = 'cohort' requires cohort inference: aggregate weights have no
+  cohorts.`; and `flci_weights() could not reconstruct the FLCI weights of this result.` for a malformed object,
+  operators that cannot be built, or a failed check. `plot(x, type = "weights")`: the `match.arg()` error for
+  `type`; `identified.set and color apply only to type = 'sets'.` (with `type = "sets"` instead: `weights, by,
+  targets, and labels apply only to type = 'weights'.`); the `match.arg()` errors for `weights` and `by`; `labels
+  must be TRUE or FALSE.`; `targets must be NULL or a character vector of target ids.`; the method and
+  `by = 'cohort'` errors above; `cohorts cannot be selected under aggregate inference: aggregate weights have no
+  cohorts.`; for `weights = "gamma"` on a post-only result the message `The post-only FLCI puts no weight on the
+  pure pre-treatment second differences: its weights gamma are zero by construction. Use weights = 'coefficients'
+  to plot its weights v.` and an invisible `NULL`; `M must select finite computed bounds.`; `No computed results
+  match the requested plot selection.`; `No FLCI weights to plot: every selected result failed; inspect
+  summary().`; for `weights = "gamma"` without pure pre-treatment second differences the message `This result has
+  no pure pre-treatment second differences, so the FLCI has no weights gamma to plot.` and an invisible `NULL`; and
+  the no-match error again when `cohorts` removes every row. `flci_weights()` itself never messages or warns.
+- **Tests of the FLCI weights.** `tests/testthat/test-flci-weights.R` (14 blocks; its helpers, prefixed `fw_`, are
+  defined in the file) computes its references from public fields of fits and results (`betahat`, `W`,
+  `normalization`, `coordinate_info`, `cohort_masses`, `targets`, `results`) without internal functions: columns,
+  types, order and attributes; `v` against the closed form and its projection against the stored weights; `gamma`
+  against the stored values and their labels; the two sum identities and the post-only center against a separate
+  post-only FLCI; cohort sums; the CS-NYT correction cells; aggregate and balanced (window) results; post-only
+  results and paths too short for second differences; failed tasks listed as missing; the minimum-norm tie-break
+  (a `cohort_input()` object whose covariance is zero on the pre-treatment block); every error and message; the
+  unchanged default plot; and the weights plot's tiles, white zeros, captions and selections.
 - **Covariance messages.** `covariance must be 'CR1' or 'CR2'.` for any other value; `At least two independent
   clusters are required for CR1 covariance.` (or `CR2`); and, for CR2, an error if a cluster holds all but a
   numerically negligible share of its cohort's weight. `cov = "CR2"` is not a partial match: it lands in `...` and is

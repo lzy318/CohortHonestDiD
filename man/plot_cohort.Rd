@@ -25,6 +25,11 @@
   xlab = NULL,
   ylab = "Effect",
   color = NULL,
+  type = c("sets", "weights"),
+  weights = c("coefficients", "gamma"),
+  by = c("element", "cohort"),
+  targets = NULL,
+  labels = FALSE,
   ...
 )
 }
@@ -32,9 +37,12 @@
 \item{x}{A `cohort_fit` or `cohort_sensitivity` object.}
 
 \item{type}{For fits, an aggregated (`"dynamic"`) or cohort-specific
-(`"cohort-dynamic"`) event study.}
+(`"cohort-dynamic"`) event study. For sensitivity results,
+\code{"sets"} (default) plots the confidence sets and \code{"weights"}
+the FLCI weights.}
 
-\item{cohorts}{Optional subset of integer cohort adoption indices.}
+\item{cohorts}{Optional subset of integer cohort adoption indices. With
+\code{type = "weights"}, it selects the rows of these cohorts.}
 
 \item{main}{Optional plot title.}
 
@@ -44,12 +52,26 @@
 
 \item{M}{Optional subset of computed bounds to plot.}
 
-\item{identified.set}{Show the plug-in identified-set band for ATT plots?}
+\item{identified.set}{Show the plug-in identified-set band for ATT plots?
+Only for \code{type = "sets"}.}
 
-\item{color}{Optional sensitivity-set color, overriding the paper palette.}
+\item{color}{Optional sensitivity-set color, overriding the paper palette.
+Only for \code{type = "sets"}.}
+
+\item{weights}{With \code{type = "weights"}: \code{"coefficients"}
+(default) or \code{"gamma"}, as in \code{\link{flci_weights}}.}
+
+\item{by}{With \code{type = "weights"}: \code{"element"} (default) or
+\code{"cohort"}, as in \code{\link{flci_weights}}.}
+
+\item{targets}{With \code{type = "weights"}: optional target ids, as in
+\code{x$intervals$target}; by default every target, one panel each.}
+
+\item{labels}{With \code{type = "weights"}: print the values in the cells?}
 }
 \value{
-An editable `ggplot` object.
+An editable `ggplot` object. With \code{type = "weights"},
+  \code{NULL} (invisibly) when there is nothing to draw.
 }
 \description{
 ATT results are plotted against the sensitivity bound. Dynamic and
@@ -57,4 +79,16 @@ cohort-dynamic results overlay robust sets on conventional event-study
 coefficients. Multiple bounds are faceted. All intervals are pointwise.
 Disconnected confidence-set components are drawn separately; unbounded
 endpoints use arrows. Numerical failures are reported, not drawn as sets.
+}
+\details{
+With \code{type = "weights"}, an FLCI result is drawn as a heatmap
+  of \code{flci_weights(x, weights, by)}: one row per pre-treatment
+  coefficient or second difference (labelled by relative period, grouped by
+  cohort, earliest at the top) or per cohort, one column per computed bound,
+  and one panel per target. Negative values are blue, positive values
+  vermilion, and zeros white. \code{M}, \code{cohorts} and \code{targets}
+  select bounds, rows and panels; \code{identified.set} and \code{color}
+  apply only to \code{type = "sets"}. For a post-only FLCI, \code{gamma} is
+  zero by construction, and \code{weights = "gamma"} only prints a message.
+  Conditional and C-LF results have no such weights.
 }

@@ -116,6 +116,9 @@ last untreated period. Dynamic and cohort-dynamic intervals are pointwise.
 aggregated event study, to the relative periods observed for every cohort; see
 `?cohort_sensitivity`.
 
+`flci_weights()` and `plot(result, type = "weights")` show an FLCI's weights on
+the pre-treatment coefficients and on their second differences.
+
 ## Covariance: CR1 and CR2
 
 `cohort_fit()` estimates the joint covariance of all cohort-period

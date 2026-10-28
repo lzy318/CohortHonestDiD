@@ -476,6 +476,57 @@ either `cohort.paths` value, but in general not the same aggregate inference.
 Balanced aggregate results store the aggregation matrix, the aggregated
 coefficients, and their covariance in `aggregation`.
 
+### FLCI weights {#flci-weights}
+
+The FLCI is a linear estimator. Its weights on the post-treatment coefficients
+are the target weights, and `flci_weights()` tabulates the others: the weights
+\(v\) on the pre-treatment coefficients (`weights = "coefficients"`, the
+default) and the weights \(\gamma\) on the pure pre-treatment second
+differences \(\hat z\) (`weights = "gamma"`), with each weight's contribution
+to the center. `plot(result, type = "weights")` draws them against the bound,
+one row per coefficient or second difference, grouped by cohort.
+
+```{r flci-weights-v, fig.height=6}
+att_flci_post <- cohort_sensitivity(fit_imp, restriction = "SD", M = M_application,
+                                    target = "att", method = "FLCI",
+                                    full.path = FALSE, seed = 123)
+plot(att_flci_post, type = "weights", main = "Post-only FLCI: weights v")
+plot(att_flci, type = "weights", main = "Full-path FLCI: weights v")
+```
+
+The post-only FLCI puts weight only on each cohort's last two pre-treatment
+coefficients, \(s=-1\) and \(s=0\): it subtracts the linear extrapolation of
+the cohort's pre-treatment slope, and its weights do not depend on `M`. With
+CS-NYT it also weights the adjustment cohorts' coefficients in the base
+period. The full-path FLCI adds \(D'\gamma\), a combination of the pure
+pre-treatment second differences, so its weights reach earlier periods. Each
+cohort's pre-treatment coefficients satisfy one normalization (the imputation
+coefficients sum to zero, and the CS coefficient at \(s=0\) is zero), so the
+weights are unique only up to that direction. `flci_weights()` reports the
+paper's form \(v=v^{P}+D'\gamma\); `results[[k]]$weights$coefficients` stores
+its projection orthogonal to the normalization, which gives the same estimate.
+
+```{r flci-weights-gamma, fig.height=4.5}
+plot(att_flci, type = "weights", weights = "gamma", labels = TRUE,
+     main = "Full-path FLCI: weights gamma")
+gamma_att <- flci_weights(att_flci, weights = "gamma")
+centers <- attr(gamma_att, "centers")
+tab(data.frame(M = centers$M, FLCI_center = centers$center,
+  post_only_center = centers$post.only.center,
+  sum_of_contributions = as.numeric(tapply(gamma_att$contribution, gamma_att$M, sum))))
+tab(flci_weights(att_flci, weights = "gamma", by = "cohort"))
+```
+
+At \(M=0\) the full-path FLCI uses every pure pre-treatment second difference
+as a control variate. Each unit of weight costs `M` of worst-case bias, so the
+weights shrink as `M` grows: at `M = .005` and `.01` only the 2004 cohort's
+second difference keeps weight, and from `M = .015` all weights are zero and
+the two FLCIs coincide. The contributions \(\gamma_j\hat z_j\) add up to the
+FLCI center minus the post-only center, which is also the center of the
+post-only plug-in identified set. `by = "cohort"` sums them within each
+cohort. Imputation and CS-NYT give the same \(\gamma\), centers, and
+contributions.
+
 ## 4. Procedures and SD scopes {#procedures}
 
 The six comparisons below cross the three procedures with the two SD scopes.
@@ -590,7 +641,8 @@ tab(data.frame(conventional_estimate = flci_sd$estimates$estimate,
 
 The FLCI's linear weights (`results[[k]]$weights`) determine its optimized
 center, and the trade-off between its standard deviation and worst-case bias
-determines its half-length.
+determines its half-length. `flci_weights()` tabulates the weights, and
+`plot(result, type = "weights")` draws them ([FLCI weights](#flci-weights)).
 
 ### Outcomes and statuses
 
@@ -769,3 +821,7 @@ plot(att, M = c(0, .015, .02), identified.set = FALSE,
 `identified.set = FALSE` removes the plug-in band from ATT plots without
 changing the confidence sets. `paper_palette()` returns the package's colors for
 representations, procedures, or cohorts.
+
+For FLCI results, `plot(result, type = "weights")` draws the weights as a
+heatmap instead of the sets; `weights`, `by`, `targets`, and `labels` choose
+what it shows ([FLCI weights](#flci-weights)).

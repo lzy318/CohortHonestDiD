@@ -30,6 +30,12 @@
   balanced window. `settings` records the window, and balanced aggregate
   results contain the aggregated coefficients in `aggregation`. The default,
   `balanced = FALSE`, leaves every result unchanged.
+* New function `flci_weights()` and plot type `plot(result, type = "weights")`
+  for FLCI results. They show the FLCI's weights `v` on the pre-treatment
+  coefficients, to compare the full-path with the post-only FLCI, and its
+  weights `gamma` on the pure pre-treatment second differences, with each
+  weight's contribution to the FLCI center, by element or summed by cohort.
+  Results and the default plots are unchanged.
 * `print()` and `summary()` of fits and sensitivity results now name the
   covariance: CR1, CR2, or supplied to `cohort_input()`.
 * Calls that state `method` explicitly and use the default CR1 covariance give

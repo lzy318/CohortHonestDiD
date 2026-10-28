@@ -53,7 +53,9 @@
 #'   connected confidence-set component), `estimates`, `settings`, and detailed
 #'   `results`. Empty sets and numerical failures have explicit status rows.
 #'   With \code{balanced = TRUE}, see the section "Balanced targets" for the
-#'   added settings and the \code{aggregation} element.
+#'   added settings and the \code{aggregation} element. For FLCI results,
+#'   \code{results[[k]]$weights} holds the weights of the linear estimator;
+#'   \code{\link{flci_weights}} tabulates them.
 #' @details The defaults follow the paper's recommendation: cohort inference
 #'   with the C-LF procedure, under the post-only restriction for SD. Before
 #'   version 0.2.0 the SD default was the full-path FLCI; request it with
