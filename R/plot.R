@@ -6,9 +6,9 @@
 #' Disconnected confidence-set components are drawn separately; unbounded
 #' endpoints use arrows. Numerical failures are reported, not drawn as sets.
 #'
-#' @param x A `cohort_fit` or `cohort_sensitivity` object.
-#' @param type For fits, an aggregated (`"dynamic"`) or cohort-specific
-#'   (`"cohort-dynamic"`) event study. For sensitivity results,
+#' @param x A \code{cohort_fit} or \code{cohort_sensitivity} object.
+#' @param type For fits, an aggregated (\code{"dynamic"}) or cohort-specific
+#'   (\code{"cohort-dynamic"}) event study. For sensitivity results,
 #'   \code{"sets"} (default) plots the confidence sets and \code{"weights"}
 #'   the FLCI weights.
 #' @param M Optional subset of computed bounds to plot.
@@ -28,7 +28,7 @@
 #'   \code{x$intervals$target}; by default every target, one panel each.
 #' @param labels With \code{type = "weights"}: print the values in the cells?
 #' @param ... Reserved for additional graphical arguments.
-#' @return An editable `ggplot` object. With \code{type = "weights"},
+#' @return An editable \code{ggplot} object. With \code{type = "weights"},
 #'   \code{NULL} (invisibly) when there is nothing to draw.
 #' @details With \code{type = "weights"}, an FLCI result is drawn as a heatmap
 #'   of \code{flci_weights(x, weights, by)}: one row per pre-treatment

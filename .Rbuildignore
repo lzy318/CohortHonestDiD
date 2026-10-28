@@ -11,3 +11,6 @@
 ^Meta$
 ^[^/]+\.tar\.gz$
 ^[^/]+\.Rcheck$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

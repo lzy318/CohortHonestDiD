@@ -20,13 +20,15 @@ cohort_input(
 pre-treatment and reference-period coefficients.}
 
 \item{vcov}{Their joint sampling covariance, with matching row/column names.
-It is used as supplied: the `covariance` option of [cohort_fit()] does not
-apply here, and printed results describe it as supplied to
-`cohort_input()`. To use a CR2 covariance, compute it and pass it here.}
+It is used as supplied: the \code{covariance} option of
+\code{\link{cohort_fit}()} does not apply here, and printed results
+describe it as supplied to \code{cohort_input()}. To use a CR2 covariance,
+compute it and pass it here.}
 
-\item{coefficient_info}{Data frame with `coordinate`, `cohort` (integer
-adoption index), `relative_period` (one at adoption), and `type`
-(`"pre"`/`"post"`). Rows identify the supplied coefficient names.}
+\item{coefficient_info}{Data frame with \code{coordinate}, \code{cohort}
+(integer adoption index), \code{relative_period} (one at adoption), and
+\code{type} (\code{"pre"}/\code{"post"}). Rows identify the supplied
+coefficient names.}
 
 \item{W}{Square bias map with matching coordinate names: delta = W Delta.}
 
@@ -36,12 +38,14 @@ imputation it encodes mean-zero pre-treatment coefficients.}
 
 \item{cohort_sizes}{Named positive sizes or fixed masses, one per cohort.}
 
-\item{estimator}{Estimator label: `"imp"`, `"cs_nyt"`, or `"cs_nt"`.}
+\item{estimator}{Estimator label: \code{"imp"}, \code{"cs_nyt"}, or
+\code{"cs_nt"}.}
 
 \item{diagnostics}{Optional list describing covariance provenance and sample.}
 }
 \value{
-A `cohort_fit` object accepted by [cohort_sensitivity()].
+A \code{cohort_fit} object accepted by
+  \code{\link{cohort_sensitivity}()}.
 }
 \description{
 Construct the common input object from externally estimated quantities.

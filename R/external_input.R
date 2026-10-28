@@ -8,20 +8,24 @@
 #' @param betahat Named numeric vector of cohort-period coefficients, including
 #'   pre-treatment and reference-period coefficients.
 #' @param vcov Their joint sampling covariance, with matching row/column names.
-#'   It is used as supplied: the `covariance` option of [cohort_fit()] does not
-#'   apply here, and printed results describe it as supplied to
-#'   `cohort_input()`. To use a CR2 covariance, compute it and pass it here.
-#' @param coefficient_info Data frame with `coordinate`, `cohort` (integer
-#'   adoption index), `relative_period` (one at adoption), and `type`
-#'   (`"pre"`/`"post"`). Rows identify the supplied coefficient names.
+#'   It is used as supplied: the \code{covariance} option of
+#'   \code{\link{cohort_fit}()} does not apply here, and printed results
+#'   describe it as supplied to \code{cohort_input()}. To use a CR2 covariance,
+#'   compute it and pass it here.
+#' @param coefficient_info Data frame with \code{coordinate}, \code{cohort}
+#'   (integer adoption index), \code{relative_period} (one at adoption), and
+#'   \code{type} (\code{"pre"}/\code{"post"}). Rows identify the supplied
+#'   coefficient names.
 #' @param W Square bias map with matching coordinate names: delta = W Delta.
 #' @param normalization Matrix of deterministic coefficient constraints, with
 #'   named columns. For CS this selects the zero reference coefficients; for
 #'   imputation it encodes mean-zero pre-treatment coefficients.
 #' @param cohort_sizes Named positive sizes or fixed masses, one per cohort.
-#' @param estimator Estimator label: `"imp"`, `"cs_nyt"`, or `"cs_nt"`.
+#' @param estimator Estimator label: \code{"imp"}, \code{"cs_nyt"}, or
+#'   \code{"cs_nt"}.
 #' @param diagnostics Optional list describing covariance provenance and sample.
-#' @return A `cohort_fit` object accepted by [cohort_sensitivity()].
+#' @return A \code{cohort_fit} object accepted by
+#'   \code{\link{cohort_sensitivity}()}.
 #' @export
 cohort_input <- function(betahat, vcov, coefficient_info, W, normalization,
                          cohort_sizes, estimator = "imp", diagnostics = list()) {

@@ -34,10 +34,10 @@
 )
 }
 \arguments{
-\item{x}{A `cohort_fit` or `cohort_sensitivity` object.}
+\item{x}{A \code{cohort_fit} or \code{cohort_sensitivity} object.}
 
-\item{type}{For fits, an aggregated (`"dynamic"`) or cohort-specific
-(`"cohort-dynamic"`) event study. For sensitivity results,
+\item{type}{For fits, an aggregated (\code{"dynamic"}) or cohort-specific
+(\code{"cohort-dynamic"}) event study. For sensitivity results,
 \code{"sets"} (default) plots the confidence sets and \code{"weights"}
 the FLCI weights.}
 
@@ -70,7 +70,7 @@ Only for \code{type = "sets"}.}
 \item{labels}{With \code{type = "weights"}: print the values in the cells?}
 }
 \value{
-An editable `ggplot` object. With \code{type = "weights"},
+An editable \code{ggplot} object. With \code{type = "weights"},
   \code{NULL} (invisibly) when there is nothing to draw.
 }
 \description{

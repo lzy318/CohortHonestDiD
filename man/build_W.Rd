@@ -16,18 +16,19 @@ build_W(
 \item{cohort_times}{Integer adoption indices on the ordered analysis time grid.}
 
 \item{cohort_sizes}{Positive cohort sizes or fixed cohort masses, in the same
-order as `cohort_times`. If named, names must be the adoption indices.}
+order as \code{cohort_times}. If named, names must be the adoption indices.}
 
 \item{never_treated_size}{Positive size or fixed mass of the never-treated group.}
 
 \item{n_periods}{Number of periods in the analysis window.}
 
-\item{estimator}{One of `"imp"`, `"cs_nyt"`, or `"cs_nt"`.}
+\item{estimator}{One of \code{"imp"}, \code{"cs_nyt"}, or \code{"cs_nt"}.}
 }
 \value{
-A named square matrix `W`, with all pre-treatment coordinates followed
-  by all post-treatment coordinates. Within each block, cohorts and periods
-  are ordered increasingly. Relative period one is the adoption period.
+A named square matrix \code{W}, with all pre-treatment coordinates
+  followed by all post-treatment coordinates. Within each block, cohorts and
+  periods are ordered increasingly. Relative period one is the adoption
+  period.
 }
 \description{
 Constructs the full mapping from cohort-specific primitive deviations to

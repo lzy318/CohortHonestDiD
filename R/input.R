@@ -4,33 +4,36 @@
 #' and constructs the joint covariance and block-bias map used by sensitivity
 #' analysis. Outcome missingness is allowed: outcomes are never imputed.
 #'
-#' @param formula A two-variable formula such as `outcome ~ treatment`.
+#' @param formula A two-variable formula such as \code{outcome ~ treatment}.
 #'   Covariate terms and transformed variables are not supported by this interface.
 #' @param data A data frame of unit-period observations.
 #' @param index Character vector naming the unit and time columns, in that order.
-#' @param Y,D Outcome and treatment column names, as an alternative to `formula`.
-#' @param estimator One of `"imp"`, `"cs_nyt"`, or `"cs_nt"`.
+#' @param Y,D Outcome and treatment column names, as an alternative to
+#'   \code{formula}.
+#' @param estimator One of \code{"imp"}, \code{"cs_nyt"}, or \code{"cs_nt"}.
 #' @param cluster Cluster column name or row-aligned vector, constant within unit.
 #'   Defaults to the unit identifier.
 #' @param weights Positive weights, supplied as a column name or row-aligned
 #'   numeric vector. Weights must be constant within unit; the default is one.
 #'   Extreme weights are rescaled by a common positive factor when required for
-#'   finite arithmetic. `data_info$weight_scale` records that divisor; stored
-#'   unit weights and cohort masses then use the rescaled units.
-#' @param covariance Covariance estimator: `"CR1"` (default) or `"CR2"`,
-#'   case-insensitive. It follows `...`, so give it by name. See Details.
+#'   finite arithmetic. \code{data_info$weight_scale} records that divisor;
+#'   stored unit weights and cohort masses then use the rescaled units.
+#' @param covariance Covariance estimator: \code{"CR1"} (default) or
+#'   \code{"CR2"}, case-insensitive. It follows \code{...}, so give it by name.
+#'   See Details.
 #' @param ... Reserved for future extensions. Unrecognized arguments cause an error.
-#' @return A `cohort_fit` object containing full named coefficients `betahat`,
-#'   their joint covariance `Sigma`, the bias map `W`, normalization constraints,
-#'   a cohort-period registry, sample information, and diagnostic tables.
-#'   `covariance_convention` is `"cohort_period_centered_CR1"` or
-#'   `"cohort_period_centered_CR2"`. `cluster_scores` has one row per
-#'   cluster: under CR1, `Sigma` is the CR1 factor times their cross-product;
-#'   under CR2 the rows are the adjusted scores and `Sigma` is their
-#'   cross-product. CR2 fits also contain `cluster_shares`, a data frame with
-#'   one row per cluster and cohort group (`cluster`, `cohort`, `units`,
-#'   `mass`, `share`, `factor`; cohort 0 is the never-treated group), and
-#'   `diagnostics$cr1` is `NA` because no CR1 factor is applied.
+#' @return A \code{cohort_fit} object containing full named coefficients
+#'   \code{betahat}, their joint covariance \code{Sigma}, the bias map \code{W},
+#'   normalization constraints, a cohort-period registry, sample information,
+#'   and diagnostic tables. \code{covariance_convention} is
+#'   \code{"cohort_period_centered_CR1"} or \code{"cohort_period_centered_CR2"}.
+#'   \code{cluster_scores} has one row per cluster: under CR1, \code{Sigma} is
+#'   the CR1 factor times their cross-product; under CR2 the rows are the
+#'   adjusted scores and \code{Sigma} is their cross-product. CR2 fits also
+#'   contain \code{cluster_shares}, a data frame with one row per cluster and
+#'   cohort group (\code{cluster}, \code{cohort}, \code{units}, \code{mass},
+#'   \code{share}, \code{factor}; cohort 0 is the never-treated group), and
+#'   \code{diagnostics$cr1} is \code{NA} because no CR1 factor is applied.
 #' @details Treatment must be binary and absorbing. Missing treatment values,
 #'   including absent unit-time rows, are filled forward from the previous
 #'   observed treatment status within unit. Leading unknown treatment statuses
@@ -43,16 +46,16 @@
 #'
 #'   The covariance centers outcomes within cohort-period cells (weighted cell
 #'   means when weights are supplied) and sums the resulting scores within
-#'   clusters. With `covariance = "CR1"`, the default, the sum of the outer
+#'   clusters. With \code{covariance = "CR1"}, the default, the sum of the outer
 #'   products of the cluster scores is multiplied by the CR1 factor
 #'   G/(G - 1) * (n - 1)/(n - p), with G clusters, n observed usable rows, and
-#'   p nonempty cohort-period cells. `covariance = "CR2"` is the bias-reduced
-#'   covariance of Bell and McCaffrey (2002): there is no such factor, and
-#'   each cluster's score is instead divided by sqrt(1 - p_c), where p_c is the
-#'   cluster's share of the units of its cohort, measured by the unit weights
-#'   when weights are supplied. The never-treated units form their own group.
-#'   In the cohort-period cell-mean model this is the CR2 adjustment for a
-#'   working model in which each unit's disturbance variance is inversely
+#'   p nonempty cohort-period cells. \code{covariance = "CR2"} is the
+#'   bias-reduced covariance of Bell and McCaffrey (2002): there is no such
+#'   factor, and each cluster's score is instead divided by sqrt(1 - p_c), where
+#'   p_c is the cluster's share of the units of its cohort, measured by the unit
+#'   weights when weights are supplied. The never-treated units form their own
+#'   group. In the cohort-period cell-mean model this is the CR2 adjustment for
+#'   a working model in which each unit's disturbance variance is inversely
 #'   proportional to its weight. On a balanced panel, a cluster that makes up a
 #'   whole cohort has a zero score under both rules, so that cohort's sampling
 #'   variation is omitted. If a cluster contains units of several cohorts, the

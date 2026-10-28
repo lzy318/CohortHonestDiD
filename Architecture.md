@@ -46,6 +46,7 @@ under `inst/upstream/R/` uses the linear-programming (`Rglpk`, `lpSolveAPI`), no
 | `LICENSE.md` | Full MIT license text | No (build-ignored) |
 | `Architecture.md` | This file | No (build-ignored) |
 | `data-raw/prepare-minimum-wage.R` | Adds the convenience aliases to the study input to produce `data/minimum_wage.rda`; the input file is not in the repository | No (build-ignored) |
+| `_pkgdown.yml` | pkgdown configuration of the website https://lzy318.github.io/CohortHonestDiD/ (README as home page, the help pages, the two vignettes as articles); the site is built locally and published from the `gh-pages` branch | No (build-ignored) |
 | `.Rbuildignore`, `.gitignore` | Build and Git exclusions | No |
 
 ---

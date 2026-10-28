@@ -29,8 +29,10 @@ dependency needs it.
 
 **Source Code:** [GitHub](https://github.com/lzy318/CohortHonestDiD)
 
-**User Manual:** [Getting started](vignettes/getting-started.Rmd) and
-[Detailed guide](vignettes/detailed-guide.Rmd). To read them in R, install with
+**User Manual:** [Website](https://lzy318.github.io/CohortHonestDiD/) with the
+[Getting started](https://lzy318.github.io/CohortHonestDiD/articles/getting-started.html)
+and [Detailed guide](https://lzy318.github.io/CohortHonestDiD/articles/detailed-guide.html)
+tutorials and the help pages. To read the tutorials in R, install with
 `remotes::install_github("lzy318/CohortHonestDiD", dependencies = TRUE, build_vignettes = TRUE)`
 and run `browseVignettes("CohortHonestDiD")`.
 

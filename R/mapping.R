@@ -4,13 +4,14 @@
 #' estimator bias, using the paper's balanced-panel formulas.
 #' @param cohort_times Integer adoption indices on the ordered analysis time grid.
 #' @param cohort_sizes Positive cohort sizes or fixed cohort masses, in the same
-#'   order as `cohort_times`. If named, names must be the adoption indices.
+#'   order as \code{cohort_times}. If named, names must be the adoption indices.
 #' @param never_treated_size Positive size or fixed mass of the never-treated group.
 #' @param n_periods Number of periods in the analysis window.
-#' @param estimator One of `"imp"`, `"cs_nyt"`, or `"cs_nt"`.
-#' @return A named square matrix `W`, with all pre-treatment coordinates followed
-#'   by all post-treatment coordinates. Within each block, cohorts and periods
-#'   are ordered increasingly. Relative period one is the adoption period.
+#' @param estimator One of \code{"imp"}, \code{"cs_nyt"}, or \code{"cs_nt"}.
+#' @return A named square matrix \code{W}, with all pre-treatment coordinates
+#'   followed by all post-treatment coordinates. Within each block, cohorts and
+#'   periods are ordered increasingly. Relative period one is the adoption
+#'   period.
 #' @details For an unbalanced panel this fixed-mass mapping is an approximation;
 #'   it does not generally reproduce the actual observation-specific bias map.
 #' @export

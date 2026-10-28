@@ -26,3 +26,6 @@ data-raw/*.rds
 Thumbs.db
 desktop.ini
 Rplots.pdf
+
+# pkgdown site (published from the gh-pages branch)
+docs/

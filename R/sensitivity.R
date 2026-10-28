@@ -5,17 +5,19 @@
 #' period. Each reported confidence set has pointwise, rather than simultaneous,
 #' coverage. On unbalanced panels the balanced-design mapping is approximate.
 #'
-#' @param fit A fitted object returned by [cohort_fit()] or [cohort_input()].
-#' @param restriction Either `"SD"` (smoothness) or `"RM"` (relative magnitudes).
+#' @param fit A fitted object returned by \code{\link{cohort_fit}()} or
+#'   \code{\link{cohort_input}()}.
+#' @param restriction Either \code{"SD"} (smoothness) or \code{"RM"} (relative
+#'   magnitudes).
 #' @param M Nonnegative sensitivity bounds. SD bounds are in outcome units;
 #'   RM bounds are dimensionless multiples of each cohort's pre-period benchmark.
-#' @param target `"att"`, `"dynamic"`, or `"cohort-dynamic"`.
-#' @param framework `"cohort"` (default) or `"aggregate"`.
-#' @param method `"FLCI"`, `"Conditional"`, or `"C-LF"`. The default, `NULL`,
-#'   is C-LF under both SD and RM, as the paper recommends. FLCI is available
-#'   only under SD.
+#' @param target \code{"att"}, \code{"dynamic"}, or \code{"cohort-dynamic"}.
+#' @param framework \code{"cohort"} (default) or \code{"aggregate"}.
+#' @param method \code{"FLCI"}, \code{"Conditional"}, or \code{"C-LF"}. The
+#'   default, \code{NULL}, is C-LF under both SD and RM, as the paper
+#'   recommends. FLCI is available only under SD.
 #' @param full.path For SD, restrict pure pre-treatment curvature as well?
-#'   The default, `NULL`, is TRUE for FLCI and FALSE (post-only) for
+#'   The default, \code{NULL}, is TRUE for FLCI and FALSE (post-only) for
 #'   Conditional and C-LF, so the default SD analysis is C-LF under the
 #'   post-only restriction. Not applicable to RM.
 #' @param conf.level Pointwise confidence level in (0.5, 1), default 0.95.
@@ -27,19 +29,20 @@
 #'   worker count and preserve the caller's random-number state.
 #' @param control Named list of numerical controls; see the section
 #'   "Numerical controls" of \code{vignette("detailed-guide", package = "CohortHonestDiD")}.
-#'   `max.refinements` is a nonnegative integer (default 3; 0 disables retries).
-#'   Eligible unresolved searches double the regular grid intervals per retry.
-#'   `max.evaluations` is the cumulative limit on distinct confidence-set point
-#'   evaluations per target/bound, including endpoint probes, topology audits,
-#'   and retries. Simulated least-favorable critical values are reused.
-#'   For Conditional inference, `max.expansions` (default 6) caps bilateral
-#'   domain doublings, including the two required adjacent-domain agreements.
-#'   Values 0 or 1 return `domain_stability_limit` and no set. Refinement
-#'   restarts the same domains at a finer mesh within the shared budget.
-#'   For Conditional `grid.radius > 8`, `grid.points` specifies the reference
-#'   density at radius 8: the effective initial count grows enough to keep the
-#'   initial spacing no coarser than that reference. At `grid.radius <= 8`,
-#'   `grid.points` remains the literal initial count. Larger ranges require
+#'   \code{max.refinements} is a nonnegative integer (default 3; 0 disables
+#'   retries). Eligible unresolved searches double the regular grid intervals
+#'   per retry. \code{max.evaluations} is the cumulative limit on distinct
+#'   confidence-set point evaluations per target/bound, including endpoint
+#'   probes, topology audits, and retries. Simulated least-favorable critical
+#'   values are reused. For Conditional inference, \code{max.expansions}
+#'   (default 6) caps bilateral domain doublings, including the two required
+#'   adjacent-domain agreements. Values 0 or 1 return
+#'   \code{domain_stability_limit} and no set. Refinement restarts the same
+#'   domains at a finer mesh within the shared budget. For Conditional
+#'   \code{grid.radius > 8}, \code{grid.points} specifies the reference density
+#'   at radius 8: the effective initial count grows enough to keep the initial
+#'   spacing no coarser than that reference. At \code{grid.radius <= 8},
+#'   \code{grid.points} remains the literal initial count. Larger ranges require
 #'   more evaluations and may exhaust the unchanged cumulative budget.
 #' @param balanced Logical. If \code{TRUE}, the target and, under aggregate
 #'   inference, the aggregated event study use only the relative periods
@@ -49,67 +52,71 @@
 #'   \code{"full"} (used when \code{NULL}) restricts each cohort's whole path,
 #'   and \code{"window"} restricts each cohort's path only inside the balanced
 #'   window. Supplying it otherwise is an error.
-#' @return A `cohort_sensitivity` object containing `intervals` (one row per
-#'   connected confidence-set component), `estimates`, `settings`, and detailed
-#'   `results`. Empty sets and numerical failures have explicit status rows.
-#'   With \code{balanced = TRUE}, see the section "Balanced targets" for the
-#'   added settings and the \code{aggregation} element. For FLCI results,
-#'   \code{results[[k]]$weights} holds the weights of the linear estimator;
-#'   \code{\link{flci_weights}} tabulates them.
+#' @return A \code{cohort_sensitivity} object containing \code{intervals} (one
+#'   row per connected confidence-set component), \code{estimates},
+#'   \code{settings}, and detailed \code{results}. Empty sets and numerical
+#'   failures have explicit status rows. With \code{balanced = TRUE}, see the
+#'   section "Balanced targets" for the added settings and the
+#'   \code{aggregation} element. For FLCI results, \code{results[[k]]$weights}
+#'   holds the weights of the linear estimator; \code{\link{flci_weights}}
+#'   tabulates them.
 #' @details The defaults follow the paper's recommendation: cohort inference
 #'   with the C-LF procedure, under the post-only restriction for SD. Request
 #'   the full-path FLCI with \code{method = "FLCI"}. The FLCI needs the
 #'   stronger full-path restriction and should be used with caution when some
 #'   cohorts contain only a few units.
-#'   Inference uses the covariance stored in `fit`; use
-#'   `cohort_fit(covariance = "CR2")` for the bias-reduced CR2 covariance.
+#'   Inference uses the covariance stored in \code{fit}; use
+#'   \code{cohort_fit(covariance = "CR2")} for the bias-reduced CR2 covariance.
 #'
-#'   Conditional and C-LF procedures return `success = FALSE`, a warning,
+#'   Conditional and C-LF procedures return \code{success = FALSE}, a warning,
 #'   and missing confidence-set bounds when the target is deterministic or a
 #'   required moment has zero or numerically degenerate variance. The status is
-#'   `unsupported_zero_variance` or `unsupported_moment_variance`. Singular
-#'   covariance alone does not trigger this limitation. FLCI supports its exact
-#'   zero-covariance limit.
+#'   \code{unsupported_zero_variance} or \code{unsupported_moment_variance}.
+#'   Singular covariance alone does not trigger this limitation. FLCI supports
+#'   its exact zero-covariance limit.
 #'
-#'   Search diagnostics include `search.attempts` (attempt, grid.points,
+#'   Search diagnostics include \code{search.attempts} (attempt, grid.points,
 #'   new.evaluations, cumulative.evaluations, success, status),
-#'   `final.grid.points`, `refinements`, and `test.evaluations`. The requested
-#'   grid size remains in settings. Refinement preserves endpoint tolerances
-#'   and all certification checks; exhaustion returns a warning and no set.
-#'   C-LF searches use certified outer bounds from their own first-stage
-#'   acceptance inequalities. Under SD, `support.certified`, `support`, and
-#'   `search.domain` record these bounds and the searched domain. Finite-grid
-#'   agreement does not certify exhaustive interior topology.
+#'   \code{final.grid.points}, \code{refinements}, and \code{test.evaluations}.
+#'   The requested grid size remains in settings. Refinement preserves endpoint
+#'   tolerances and all certification checks; exhaustion returns a warning and
+#'   no set. C-LF searches use certified outer bounds from their own first-stage
+#'   acceptance inequalities. Under SD, \code{support.certified},
+#'   \code{support}, and \code{search.domain} record these bounds and the
+#'   searched domain. Finite-grid agreement does not certify exhaustive interior
+#'   topology.
 #'
 #'   Conditional inference searches concentric finite domains centered at a
 #'   primitive-trend contrast, with a normalization-invariant sampling scale.
-#'   The initial radius adds the plugin radius and `grid.radius` times this
+#'   The initial radius adds the plugin radius and \code{grid.radius} times this
 #'   scale. Wider domains retain the regular mesh spacing. Two successive
 #'   adjacent-domain agreements are required in addition to endpoint checks.
-#'   `topology.audit = FALSE` skips interior mesh checks only; mandatory domain
-#'   and endpoint checks remain. The automatic endpoint tolerance still uses
-#'   the conventional target standard error, separately from the search scale.
-#'   Diagnostics include `search.center`, `search.scale`, `search.scale.source`,
-#'   `initial.domain`, `search.domain`, `requested.domain`, `domain.stable`,
-#'   `domain.expansions`, `agreement.streak`, and `domain.history`.
-#'   `search.domain` records evaluated coordinates; it is empty before any
-#'   evaluation. `requested.domain` records a range blocked by an allocation
-#'   or evaluation limit. Print and summary methods report searched ranges.
-#'   Bounded numerical search does not rule out components outside those
-#'   ranges; `support.certified`, `topology.certified`, and `inversion.exact`
-#'   remain FALSE for Conditional results. Limits return a warning and no set.
-#'   With `topology.audit = TRUE`, an additional shifted finer grid checks the
-#'   quarter and three-quarter points of registered regular cells, independently
-#'   of inserted anchors. Disagreement uses the same bounded refinement policy.
-#'   Finite range and mesh checks can still miss arbitrarily narrow interior
-#'   components or gaps, as well as components outside the searched range.
-#'   Density diagnostics are `initial.grid.points`, `grid.density.adjusted`,
-#'   `reference.domain.radius`, and `reference.grid.spacing`. The reference
-#'   radius adds the same plugin radius to eight times the search scale.
-#'   Integer ceiling and any necessary upward rounding preserve an initial
-#'   spacing upper bound, not exact lattice nesting across separate radius
-#'   requests. Settings retain the requested count; histories and
-#'   `final.grid.points` record the effective counts. Starting at a larger
+#'   \code{topology.audit = FALSE} skips interior mesh checks only; mandatory
+#'   domain and endpoint checks remain. The automatic endpoint tolerance still
+#'   uses the conventional target standard error, separately from the search
+#'   scale. Diagnostics include \code{search.center}, \code{search.scale},
+#'   \code{search.scale.source}, \code{initial.domain}, \code{search.domain},
+#'   \code{requested.domain}, \code{domain.stable}, \code{domain.expansions},
+#'   \code{agreement.streak}, and \code{domain.history}. \code{search.domain}
+#'   records evaluated coordinates; it is empty before any evaluation.
+#'   \code{requested.domain} records a range blocked by an allocation or
+#'   evaluation limit. Print and summary methods report searched ranges. Bounded
+#'   numerical search does not rule out components outside those ranges;
+#'   \code{support.certified}, \code{topology.certified}, and
+#'   \code{inversion.exact} remain FALSE for Conditional results. Limits return
+#'   a warning and no set. With \code{topology.audit = TRUE}, an additional
+#'   shifted finer grid checks the quarter and three-quarter points of
+#'   registered regular cells, independently of inserted anchors. Disagreement
+#'   uses the same bounded refinement policy. Finite range and mesh checks can
+#'   still miss arbitrarily narrow interior components or gaps, as well as
+#'   components outside the searched range. Density diagnostics are
+#'   \code{initial.grid.points}, \code{grid.density.adjusted},
+#'   \code{reference.domain.radius}, and \code{reference.grid.spacing}. The
+#'   reference radius adds the same plugin radius to eight times the search
+#'   scale. Integer ceiling and any necessary upward rounding preserve an
+#'   initial spacing upper bound, not exact lattice nesting across separate
+#'   radius requests. Settings retain the requested count; histories and
+#'   \code{final.grid.points} record the effective counts. Starting at a larger
 #'   count does not consume a refinement. Reference fields are NA when no
 #'   wider-range calculation is needed or reached.
 #' @section Balanced targets:
