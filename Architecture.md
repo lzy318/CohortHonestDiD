@@ -11,7 +11,7 @@
 ## Overview
 
 CohortHonestDiD implements cohort-anchored HonestDiD sensitivity analysis for difference-in-differences designs with
-staggered adoption, as proposed in Liu (2026), "Cohort-Anchored HonestDiD" (working paper). It estimates full
+staggered adoption, as proposed in Liu (2026), "Cohort-Anchored HonestDiD" (arXiv:2509.01829). It estimates full
 cohort-period coefficients and their joint cluster covariance, then applies the smoothness (SD) and
 relative-magnitude (RM) restrictions of Rambachan and Roth (2023) to each cohort's block bias through an
 estimator-specific bias map `W`. The package accepts either a panel (`cohort_fit()`) or named external estimates

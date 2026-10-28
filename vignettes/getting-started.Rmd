@@ -254,5 +254,5 @@ pre-treatment coefficients must be block-bias estimates as defined in the
 paper; an aggregated event study with marginal standard errors does not carry
 this information. See `?cohort_input`, `?build_W`, and the detailed guide.
 
-This package accompanies Liu (2026), *Cohort-Anchored HonestDiD* (working
-paper); see `citation("CohortHonestDiD")`.
+This package accompanies Liu (2026), *Cohort-Anchored HonestDiD*
+([arXiv:2509.01829](https://arxiv.org/abs/2509.01829)); see `citation("CohortHonestDiD")`.

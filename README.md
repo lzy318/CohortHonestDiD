@@ -21,7 +21,7 @@ covariance; see [NEWS](NEWS.md).
 
 ## The paper
 
-Liu, Ziyi (2026). "Cohort-Anchored HonestDiD." Working paper.
+Liu, Ziyi (2026). "Cohort-Anchored HonestDiD." [arXiv:2509.01829](https://arxiv.org/abs/2509.01829).
 
 The paper develops the method, compares cohort and aggregate inference in
 simulations, and applies it to the minimum-wage study of Callaway and
@@ -255,14 +255,15 @@ After installing with `build_vignettes = TRUE`, open them with
 
 If you use CohortHonestDiD, please cite the paper:
 
-> Liu, Ziyi (2026). "Cohort-Anchored HonestDiD." Working paper.
+> Liu, Ziyi (2026). "Cohort-Anchored HonestDiD." [arXiv:2509.01829](https://arxiv.org/abs/2509.01829).
 
 ```bibtex
-@unpublished{liu2026cohort,
+@misc{liu2026cohort,
   title  = {Cohort-Anchored {HonestDiD}},
   author = {Liu, Ziyi},
   year   = {2026},
-  note   = {Working paper}
+  note   = {arXiv:2509.01829},
+  url    = {https://arxiv.org/abs/2509.01829}
 }
 ```
 

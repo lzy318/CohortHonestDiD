@@ -31,7 +31,7 @@ A data frame with 15,988 rows and 28 columns:
 County panel of the minimum-wage application in Callaway and
   Sant'Anna (2021), "Difference-in-Differences with Multiple Time Periods",
   Journal of Econometrics, 225(2), 200--230, as used in Liu (2026),
-  "Cohort-Anchored HonestDiD" (working paper). The script
+  "Cohort-Anchored HonestDiD" (arXiv:2509.01829). The script
   \file{data-raw/prepare-minimum-wage.R} in the package's source repository
   records all convenience aliases.
 }
