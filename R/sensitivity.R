@@ -57,10 +57,10 @@
 #'   \code{results[[k]]$weights} holds the weights of the linear estimator;
 #'   \code{\link{flci_weights}} tabulates them.
 #' @details The defaults follow the paper's recommendation: cohort inference
-#'   with the C-LF procedure, under the post-only restriction for SD. Before
-#'   version 0.2.0 the SD default was the full-path FLCI; request it with
-#'   `method = "FLCI"`. The FLCI needs the stronger full-path restriction and
-#'   should be used with caution when some cohorts contain only a few units.
+#'   with the C-LF procedure, under the post-only restriction for SD. Request
+#'   the full-path FLCI with \code{method = "FLCI"}. The FLCI needs the
+#'   stronger full-path restriction and should be used with caution when some
+#'   cohorts contain only a few units.
 #'   Inference uses the covariance stored in `fit`; use
 #'   `cohort_fit(covariance = "CR2")` for the bias-reduced CR2 covariance.
 #'

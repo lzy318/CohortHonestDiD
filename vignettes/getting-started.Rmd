@@ -19,7 +19,7 @@ library(CohortHonestDiD)
 CohortHonestDiD applies the sensitivity analysis of Rambachan and Roth (2023)
 to staggered adoption, cohort by cohort. It estimates cohort-period effects and
 places the sensitivity restriction on each adoption cohort's block bias: the
-cohort's untreated trend relative to the units still untreated when it adopts.
+cohort's untreated trend relative to its comparison group at adoption.
 You choose the estimator, the restriction and its bounds, the target (an
 average, dynamic, or cohort-specific effect), and the inference procedure. The
 package reports a confidence set for the target at each bound. This tutorial

@@ -51,8 +51,9 @@ for a period index, and \(s=t-g+1\). Period \(s=1\) is the adoption period and
 the restrictions use the ordered grid.
 
 A cohort's block bias \(\Delta_{g,s}\) is its untreated-outcome trend relative
-to its initial control group, the units still untreated when it adopts, under
-the estimator's normalization. It enters the bias of the estimated
+to its initial control group under the estimator's normalization: the units
+still untreated when it adopts for `imp` and `cs_nyt`, and the never-treated
+units for `cs_nt`. It enters the bias of the estimated
 coefficients through a known bias map, \(\delta=W\Delta\). The sensitivity
 restrictions apply to block biases; they place no restriction on how treatment
 effects change over time. The guide uses these terms:
