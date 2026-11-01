@@ -13,7 +13,7 @@ coverage. On unbalanced panels the balanced-design mapping is approximate."></he
 
     <a class="navbar-brand me-2" href="../index.html">CohortHonestDiD</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@ coverage. On unbalanced panels the balanced-design mapping is approximate."></he
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting started with CohortHonestDiD</a></li>
     <li><a class="dropdown-item" href="../articles/detailed-guide.html">CohortHonestDiD: a detailed guide</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/lzy318/CohortHonestDiD/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -66,7 +67,8 @@ coverage. On unbalanced panels the balanced-design mapping is approximate.</p>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  balanced <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cohort.paths <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  cohort.paths <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  direction <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -80,13 +82,19 @@ coverage. On unbalanced panels the balanced-design mapping is approximate.</p>
 
 
 <dt id="arg-restriction">restriction<a class="anchor" aria-label="anchor" href="#arg-restriction"></a></dt>
-<dd><p>Either <code>"SD"</code> (smoothness) or <code>"RM"</code> (relative
-magnitudes).</p></dd>
+<dd><p>One of nine names: <code>"SD"</code> (smoothness), <code>"RM"</code>
+(relative magnitudes), <code>"SDB"</code> and <code>"SDM"</code> (SD with a sign or
+monotonicity restriction), <code>"RMB"</code> and <code>"RMM"</code> (the same with
+RM), <code>"SDRM"</code> (relative magnitudes of second differences), and
+<code>"SDRMB"</code> and <code>"SDRMM"</code> (the same with SDRM). See the section
+"Sign, monotonicity, and SDRM restrictions".</p></dd>
 
 
 <dt id="arg-m">M<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>Nonnegative sensitivity bounds. SD bounds are in outcome units;
-RM bounds are dimensionless multiples of each cohort's pre-period benchmark.</p></dd>
+<dd><p>Nonnegative sensitivity bounds. SD, SDB, and SDM bounds are in
+outcome units. RM, RMB, and RMM bounds are multiples of each cohort's
+largest pre-treatment first difference; SDRM, SDRMB, and SDRMM bounds are
+multiples of its largest pre-treatment second difference.</p></dd>
 
 
 <dt id="arg-target">target<a class="anchor" aria-label="anchor" href="#arg-target"></a></dt>
@@ -99,15 +107,16 @@ RM bounds are dimensionless multiples of each cohort's pre-period benchmark.</p>
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p><code>"FLCI"</code>, <code>"Conditional"</code>, or <code>"C-LF"</code>. The
-default, <code>NULL</code>, is C-LF under both SD and RM, as the paper
-recommends. FLCI is available only under SD.</p></dd>
+default, <code>NULL</code>, is C-LF under every restriction. FLCI is available
+only under SD.</p></dd>
 
 
 <dt id="arg-full-path">full.path<a class="anchor" aria-label="anchor" href="#arg-full-path"></a></dt>
-<dd><p>For SD, restrict pure pre-treatment curvature as well?
-The default, <code>NULL</code>, is TRUE for FLCI and FALSE (post-only) for
-Conditional and C-LF, so the default SD analysis is C-LF under the
-post-only restriction. Not applicable to RM.</p></dd>
+<dd><p>For SD, SDB, and SDM, restrict pure pre-treatment curvature
+as well? SDM then also restricts the pure pre-treatment steps. The default,
+<code>NULL</code>, is TRUE for FLCI and FALSE (post-only) for Conditional and
+C-LF, so the default SD analysis is C-LF under the post-only restriction.
+Supplying it under the other six restrictions is an error.</p></dd>
 
 
 <dt id="arg-conf-level">conf.level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
@@ -121,7 +130,8 @@ post-only restriction. Not applicable to RM.</p></dd>
 <dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
 <dd><p>Number of workers. Defaults to detected logical cores minus one,
 with a minimum of one. Workers are capped by the number of independent
-target/bound tasks, or signed components for a single RM task.</p></dd>
+target/bound tasks, or signed components for a single task under RM, RMB,
+RMM, SDRM, SDRMB, or SDRMM.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -146,7 +156,10 @@ domains at a finer mesh within the shared budget. For Conditional
 at radius 8: the effective initial count grows enough to keep the initial
 spacing no coarser than that reference. At <code>grid.radius &lt;= 8</code>,
 <code>grid.points</code> remains the literal initial count. Larger ranges require
-more evaluations and may exhaust the unchanged cumulative budget.</p></dd>
+more evaluations and may exhaust the unchanged cumulative budget. Under
+Conditional with SDB, SDM, RMB, RMM, SDRMB, or SDRMM, <code>topology.audit</code>
+defaults to <code>FALSE</code>; set it to <code>TRUE</code> to run the interior mesh
+checks.</p></dd>
 
 
 <dt id="arg-balanced">balanced<a class="anchor" aria-label="anchor" href="#arg-balanced"></a></dt>
@@ -161,6 +174,13 @@ the section "Balanced targets".</p></dd>
 <code>"full"</code> (used when <code>NULL</code>) restricts each cohort's whole path,
 and <code>"window"</code> restricts each cohort's path only inside the balanced
 window. Supplying it otherwise is an error.</p></dd>
+
+
+<dt id="arg-direction">direction<a class="anchor" aria-label="anchor" href="#arg-direction"></a></dt>
+<dd><p><code>"positive"</code> or <code>"negative"</code> for SDB, RMB, and
+SDRMB; <code>"increasing"</code> or <code>"decreasing"</code> for SDM, RMM, and SDRMM.
+It applies to every cohort and must be <code>NULL</code> under SD, RM, and SDRM.
+See the section "Sign, monotonicity, and SDRM restrictions".</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -273,6 +293,53 @@ their covariance (<code>Sigma</code>), the aggregate <code>normalization</code>,
 <code>coordinate_info</code>, and the aggregate target weights (<code>targets</code>, one
 row per target).</p>
     </div>
+    <div class="section level2">
+    <h2 id="sign-monotonicity-and-sdrm-restrictions">Sign, monotonicity, and SDRM restrictions<a class="anchor" aria-label="anchor" href="#sign-monotonicity-and-sdrm-restrictions"></a></h2>
+
+
+<p>The paper and its simulations do not cover SDB, SDM, RMB, RMM, SDRM, SDRMB,
+and SDRMM. Conditional and C-LF still apply, because each is a set of linear
+inequalities on the block biases or a finite union of such sets. Prefer C-LF,
+the default. A Conditional confidence set can keep values that C-LF rejects,
+and under RMB and RMM Conditional can run much longer and end as
+<code>domain_stability_limit</code>.</p>
+<p>SDB, RMB, and SDRMB compare each post-treatment period with period 0.
+<code>direction = "positive"</code> requires a cohort's block bias to be at least
+its value at period 0, and <code>"negative"</code> reverses the inequality. SDM,
+RMM, and SDRMM compare each period with the one before it, from period 0
+onward. <code>"increasing"</code> requires the block bias not to fall from one
+period to the next, and <code>"decreasing"</code> reverses the inequality. The sign
+is measured from period 0 for every estimator, so on a balanced panel
+imputation and CS-NYT give the same cohort inference under all nine
+restrictions when controls and seeds match. When <code>direction</code> is used,
+<code>settings</code> also contains it.</p>
+<p>SDRM bounds each post-treatment second difference by <code>M</code> times the
+cohort's largest absolute pre-treatment second difference. SDRM, SDRMB, and
+SDRMM need three pre-treatment coefficients per cohort, counting period 0.
+With fewer, the status is <code>insufficient_prehistory</code>.</p>
+<p>RM, SDRM, and their sign and monotonicity versions are unions of signed
+components. With <code>n</code> pre-treatment coefficients in a cohort, counting
+period 0, and <code>M</code> above zero, their number is the product over cohorts
+of <code>2 * (n - 1)</code> under RM, RMB, and RMM and of <code>2 * (n - 2)</code> under
+SDRM, SDRMB, and SDRMM. A task above <code>max.components</code> ends with status
+<code>inference_error</code>. Aggregate inference has one path, so it needs far
+fewer components.</p>
+<p>Under C-LF, status <code>empty</code> means that every value of the target is
+rejected at that bound, so the data reject the restriction there. It can
+occur under SDB, SDM, SDRMB, and SDRMM. A Conditional search that accepts no
+value ends as <code>uncertified_empty_search</code>. Status <code>disconnected</code>
+means several components, which can lie far apart, so keep every row of
+<code>intervals</code>. Under C-LF a gap narrower than the grid can end as
+<code>topology_audit_failure</code>. <code>topology.audit = FALSE</code> then returns a
+set, but such a gap can go unnoticed.</p>
+<p>The nine restrictions agree with HonestDiD 0.2.8 in the package tests, on one
+event study passed to <code><a href="cohort_input.html">cohort_input</a>()</code>. At <code>M = 0</code> the
+package departs from HonestDiD under RMM and RMB. It drops the inequalities
+that repeat exactly, because an exact tie distorts the conditional test, and
+HonestDiD keeps them. RMM at <code>M = 0</code> therefore equals RM here. The
+section "Restrictions beyond SD and RM" of
+<code><a href="../articles/detailed-guide.html">vignette("detailed-guide", package = "CohortHonestDiD")</a></code> has examples.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -289,6 +356,15 @@ row per target).</p>
 <span class="r-in"><span><span class="va">balanced</span><span class="op">$</span><span class="va">settings</span><span class="op">$</span><span class="va">window</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lower upper </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    -2     1 </span>
+<span class="r-in"><span><span class="co"># A sign restriction on the block biases.</span></span></span>
+<span class="r-in"><span><span class="va">signed</span> <span class="op">&lt;-</span> <span class="fu">cohort_sensitivity</span><span class="op">(</span><span class="va">fit</span>, restriction <span class="op">=</span> <span class="st">"SDB"</span>, M <span class="op">=</span> <span class="fl">0.01</span>,</span></span>
+<span class="r-in"><span>                             direction <span class="op">=</span> <span class="st">"negative"</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">signed</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> cohort inference | SDB, negative | C-LF | post-only</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Target: att | 95.0% pointwise confidence sets</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Covariance: CR1 cluster-robust, 2284 clusters </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  target    M component       lower      upper status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     att 0.01         1 -0.05258489 0.01419696     ok</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

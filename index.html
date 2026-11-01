@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">CohortHonestDiD</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,7 @@
     <li><a class="dropdown-item" href="articles/detailed-guide.html">CohortHonestDiD: a detailed guide</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -57,7 +58,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><strong>R</strong> package for cohort-anchored HonestDiD sensitivity analysis in difference-in-differences designs with staggered adoption. It places the smoothness (SD) and relative-magnitude (RM) restrictions of Rambachan and Roth (2023) on each adoption cohort’s block bias, the cohort’s untreated trend relative to its comparison group at adoption, rather than on the aggregated event study. It works with the imputation and Callaway-Sant’Anna estimators. Confidence sets for average, dynamic, and cohort-specific effects come from the Conditional and C-LF procedures or, under SD, the fixed-length confidence interval (FLCI); inference on the aggregated event study is available as a benchmark.</p>
+<p><strong>R</strong> package for cohort-anchored HonestDiD sensitivity analysis in difference-in-differences designs with staggered adoption. It places the smoothness (SD) and relative-magnitude (RM) restrictions of Rambachan and Roth (2023) on each adoption cohort’s block bias, the cohort’s untreated trend relative to its comparison group at adoption, rather than on the aggregated event study. It also offers sign and monotonicity versions of these restrictions and a second-difference version of RM. It works with the imputation and Callaway-Sant’Anna estimators. Confidence sets for average, dynamic, and cohort-specific effects come from the Conditional and C-LF procedures or, under SD, the fixed-length confidence interval (FLCI); inference on the aggregated event study is available as a benchmark.</p>
 <p><strong>Installation:</strong></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
