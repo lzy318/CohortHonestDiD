@@ -18,31 +18,39 @@ cohort_sensitivity(
   seed = NULL,
   control = list(),
   balanced = FALSE,
-  cohort.paths = NULL
+  cohort.paths = NULL,
+  direction = NULL
 )
 }
 \arguments{
 \item{fit}{A fitted object returned by \code{\link{cohort_fit}()} or
 \code{\link{cohort_input}()}.}
 
-\item{restriction}{Either \code{"SD"} (smoothness) or \code{"RM"} (relative
-magnitudes).}
+\item{restriction}{One of nine names: \code{"SD"} (smoothness), \code{"RM"}
+(relative magnitudes), \code{"SDB"} and \code{"SDM"} (SD with a sign or
+monotonicity restriction), \code{"RMB"} and \code{"RMM"} (the same with
+RM), \code{"SDRM"} (relative magnitudes of second differences), and
+\code{"SDRMB"} and \code{"SDRMM"} (the same with SDRM). See the section
+"Sign, monotonicity, and SDRM restrictions".}
 
-\item{M}{Nonnegative sensitivity bounds. SD bounds are in outcome units;
-RM bounds are dimensionless multiples of each cohort's pre-period benchmark.}
+\item{M}{Nonnegative sensitivity bounds. SD, SDB, and SDM bounds are in
+outcome units. RM, RMB, and RMM bounds are multiples of each cohort's
+largest pre-treatment first difference; SDRM, SDRMB, and SDRMM bounds are
+multiples of its largest pre-treatment second difference.}
 
 \item{target}{\code{"att"}, \code{"dynamic"}, or \code{"cohort-dynamic"}.}
 
 \item{framework}{\code{"cohort"} (default) or \code{"aggregate"}.}
 
 \item{method}{\code{"FLCI"}, \code{"Conditional"}, or \code{"C-LF"}. The
-default, \code{NULL}, is C-LF under both SD and RM, as the paper
-recommends. FLCI is available only under SD.}
+default, \code{NULL}, is C-LF under every restriction. FLCI is available
+only under SD.}
 
-\item{full.path}{For SD, restrict pure pre-treatment curvature as well?
-The default, \code{NULL}, is TRUE for FLCI and FALSE (post-only) for
-Conditional and C-LF, so the default SD analysis is C-LF under the
-post-only restriction. Not applicable to RM.}
+\item{full.path}{For SD, SDB, and SDM, restrict pure pre-treatment curvature
+as well? SDM then also restricts the pure pre-treatment steps. The default,
+\code{NULL}, is TRUE for FLCI and FALSE (post-only) for Conditional and
+C-LF, so the default SD analysis is C-LF under the post-only restriction.
+Supplying it under the other six restrictions is an error.}
 
 \item{conf.level}{Pointwise confidence level in (0.5, 1), default 0.95.}
 
@@ -50,7 +58,8 @@ post-only restriction. Not applicable to RM.}
 
 \item{cores}{Number of workers. Defaults to detected logical cores minus one,
 with a minimum of one. Workers are capped by the number of independent
-target/bound tasks, or signed components for a single RM task.}
+target/bound tasks, or signed components for a single task under RM, RMB,
+RMM, SDRM, SDRMB, or SDRMM.}
 
 \item{seed}{Optional integer seed. Fixed seeds give results independent of
 worker count and preserve the caller's random-number state.}
@@ -71,7 +80,10 @@ domains at a finer mesh within the shared budget. For Conditional
 at radius 8: the effective initial count grows enough to keep the initial
 spacing no coarser than that reference. At \code{grid.radius <= 8},
 \code{grid.points} remains the literal initial count. Larger ranges require
-more evaluations and may exhaust the unchanged cumulative budget.}
+more evaluations and may exhaust the unchanged cumulative budget. Under
+Conditional with SDB, SDM, RMB, RMM, SDRMB, or SDRMM, \code{topology.audit}
+defaults to \code{FALSE}; set it to \code{TRUE} to run the interior mesh
+checks.}
 
 \item{balanced}{Logical. If \code{TRUE}, the target and, under aggregate
 inference, the aggregated event study use only the relative periods
@@ -82,6 +94,11 @@ the section "Balanced targets".}
 \code{"full"} (used when \code{NULL}) restricts each cohort's whole path,
 and \code{"window"} restricts each cohort's path only inside the balanced
 window. Supplying it otherwise is an error.}
+
+\item{direction}{\code{"positive"} or \code{"negative"} for SDB, RMB, and
+SDRMB; \code{"increasing"} or \code{"decreasing"} for SDM, RMM, and SDRMM.
+It applies to every cohort and must be \code{NULL} under SD, RM, and SDRM.
+See the section "Sign, monotonicity, and SDRM restrictions".}
 }
 \value{
 A \code{cohort_sensitivity} object containing \code{intervals} (one
@@ -201,6 +218,57 @@ their covariance (\code{Sigma}), the aggregate \code{normalization},
 row per target).
 }
 
+\section{Sign, monotonicity, and SDRM restrictions}{
+
+The paper and its simulations do not cover SDB, SDM, RMB, RMM, SDRM, SDRMB,
+and SDRMM. Conditional and C-LF still apply, because each is a set of linear
+inequalities on the block biases or a finite union of such sets. Prefer C-LF,
+the default. A Conditional confidence set can keep values that C-LF rejects,
+and under RMB and RMM Conditional can run much longer and end as
+\code{domain_stability_limit}.
+
+SDB, RMB, and SDRMB compare each post-treatment period with period 0.
+\code{direction = "positive"} requires a cohort's block bias to be at least
+its value at period 0, and \code{"negative"} reverses the inequality. SDM,
+RMM, and SDRMM compare each period with the one before it, from period 0
+onward. \code{"increasing"} requires the block bias not to fall from one
+period to the next, and \code{"decreasing"} reverses the inequality. The sign
+is measured from period 0 for every estimator, so on a balanced panel
+imputation and CS-NYT give the same cohort inference under all nine
+restrictions when controls and seeds match. When \code{direction} is used,
+\code{settings} also contains it.
+
+SDRM bounds each post-treatment second difference by \code{M} times the
+cohort's largest absolute pre-treatment second difference. SDRM, SDRMB, and
+SDRMM need three pre-treatment coefficients per cohort, counting period 0.
+With fewer, the status is \code{insufficient_prehistory}.
+
+RM, SDRM, and their sign and monotonicity versions are unions of signed
+components. With \code{n} pre-treatment coefficients in a cohort, counting
+period 0, and \code{M} above zero, their number is the product over cohorts
+of \code{2 * (n - 1)} under RM, RMB, and RMM and of \code{2 * (n - 2)} under
+SDRM, SDRMB, and SDRMM. A task above \code{max.components} ends with status
+\code{inference_error}. Aggregate inference has one path, so it needs far
+fewer components.
+
+Under C-LF, status \code{empty} means that every value of the target is
+rejected at that bound, so the data reject the restriction there. It can
+occur under SDB, SDM, SDRMB, and SDRMM. A Conditional search that accepts no
+value ends as \code{uncertified_empty_search}. Status \code{disconnected}
+means several components, which can lie far apart, so keep every row of
+\code{intervals}. Under C-LF a gap narrower than the grid can end as
+\code{topology_audit_failure}. \code{topology.audit = FALSE} then returns a
+set, but such a gap can go unnoticed.
+
+The nine restrictions agree with HonestDiD 0.2.8 in the package tests, on one
+event study passed to \code{\link{cohort_input}()}. At \code{M = 0} the
+package departs from HonestDiD under RMM and RMB. It drops the inequalities
+that repeat exactly, because an exact tie distorts the conditional test, and
+HonestDiD keeps them. RMM at \code{M = 0} therefore equals RM here. The
+section "Restrictions beyond SD and RM" of
+\code{vignette("detailed-guide", package = "CohortHonestDiD")} has examples.
+}
+
 \examples{
 data(minimum_wage)
 \donttest{
@@ -212,5 +280,9 @@ plot(result)
 balanced <- cohort_sensitivity(fit, M = 0.01, framework = "aggregate",
                                balanced = TRUE, seed = 1)
 balanced$settings$window
+# A sign restriction on the block biases.
+signed <- cohort_sensitivity(fit, restriction = "SDB", M = 0.01,
+                             direction = "negative", seed = 1)
+signed
 }
 }

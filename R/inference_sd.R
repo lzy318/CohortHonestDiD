@@ -4,6 +4,8 @@
   restriction <- engine$v3_sd_restriction(representation$coordinate_info, M, pre_window = representation[["restriction_window"]])
   built <- engine$v3_reduce_representation(representation, restriction,
                                            allow_singular_covariance = TRUE)
+  built <- engine$v3_attach_shape(built, representation[["restriction_spec"]],
+                                  full_path = full.path)
   plugin <- engine$v3_plugin_identified_set(built, scope = scope, allow_empty = TRUE)
   if (method == "flci") return(.hc_infer_flci(
     representation, built, plugin, scope, alpha, seed, control))

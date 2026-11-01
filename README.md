@@ -10,7 +10,9 @@ difference-in-differences designs with staggered adoption. It places the
 smoothness (SD) and relative-magnitude (RM) restrictions of Rambachan and Roth
 (2023) on each adoption cohort's block bias, the cohort's untreated trend
 relative to its comparison group at adoption, rather than on the aggregated
-event study. It works with the imputation and Callaway-Sant'Anna estimators.
+event study. It also offers sign and monotonicity versions of these restrictions
+and a second-difference version of RM. It works with the imputation and
+Callaway-Sant'Anna estimators.
 Confidence sets for average, dynamic, and cohort-specific effects come from the
 Conditional and C-LF procedures or, under SD, the fixed-length confidence
 interval (FLCI); inference on the aggregated event study is available as a

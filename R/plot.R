@@ -157,7 +157,9 @@ plot.cohort_sensitivity <- function(x, M = NULL, cohorts = NULL, identified.set 
   if (is.null(color)) color <- unname(paper_palette("representation")[s$framework])
   failures <- unique(d[!d$success, c("target", "M", "status")])
   empty <- unique(d[d$success & is.na(d$lower) & is.na(d$upper), c("target", "M")])
-  scope <- if (s$restriction == "RM") "RM" else paste("SD,", if (s$full.path) "full path" else "post-only")
+  base <- .hc_restriction_spec(s$restriction)$base
+  scope <- .hc_restriction_label(s)
+  if (base == "SD") scope <- paste0(scope, ", ", if (s$full.path) "full path" else "post-only")
   method_label <- switch(s$method, flci = "FLCI", conditional = "Conditional", c_lf = "C-LF")
   caption <- sprintf("%g%% pointwise sets; %s; %s; %s inference.", 100 * s$conf.level, method_label, scope, s$framework)
   if (s$method == "conditional") caption <- paste(caption,
@@ -187,7 +189,7 @@ plot.cohort_sensitivity <- function(x, M = NULL, cohorts = NULL, identified.set 
       if (nrow(centers)) p <- p + ggplot2::geom_point(data = centers,
         ggplot2::aes(x = .data$M, y = .data$center), color = color, shape = shape, size = 2)
     }
-    x_label <- if (s$restriction == "RM") expression(bar(M)) else "M"
+    x_label <- if (base == "SD") "M" else expression(bar(M))
   } else {
     event <- .hc_event_data(x$fit, s$target == "cohort-dynamic", s$conf.level)
     if (isTRUE(s$balanced)) event <- event[event$relative_period >= s$window[["lower"]] &

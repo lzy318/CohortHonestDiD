@@ -1,7 +1,7 @@
 Package: CohortHonestDiD
 Type: Package
 Title: Cohort-Anchored 'HonestDiD' Sensitivity Analysis for Staggered Adoption
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c(person("Ziyi", "Liu", email = "zyliu2023@berkeley.edu", role = c("aut", "cre")), person("Ashesh", "Rambachan", role = "ctb", comment = "Upstream HonestDiD inference routines"), person("Jonathan", "Roth", role = "ctb", comment = "Upstream HonestDiD inference routines"))
 Description: Performs cohort-anchored sensitivity analysis for
     difference-in-differences designs with staggered adoption, as proposed

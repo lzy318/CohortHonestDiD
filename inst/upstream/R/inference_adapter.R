@@ -1093,7 +1093,8 @@ v3_prepare_rm_union <- function(
   representation <- v3_align_representation(representation)
   dependency_root <- file.path(project_root, "dependencies")
   sd_inference_load_dependencies(dependency_root)
-  scenarios <- v3_rm_scenario_table(representation$coordinate_info, Mbar, pre_window = representation[["restriction_window"]])
+  spec <- representation[["restriction_spec"]]
+  scenarios <- v3_rm_scenario_table(representation$coordinate_info, Mbar, pre_window = representation[["restriction_window"]], spec = spec)
   n_scenarios <- nrow(scenarios$table)
   if (!is.null(lf_cv_by_component)) {
     v3_assert(length(lf_cv_by_component) == n_scenarios,
@@ -1123,7 +1124,7 @@ v3_prepare_rm_union <- function(
   for (j in seq_len(n_scenarios)) {
     restriction <- v3_rm_component_restriction(
       representation$coordinate_info, Mbar,
-      scenarios$table[j, , drop = FALSE], scenarios$operator
+      scenarios$table[j, , drop = FALSE], scenarios$operator, spec = spec
     )
     built <- v3_reduce_polyhedral_representation(representation, restriction)
     geometry <- v3_make_arp_geometry(built, scope = "post_connected")
@@ -1991,14 +1992,15 @@ v3_clf_rm_union <- function(
             "max_expansions must be one nonnegative finite value.")
   requested_max_expansions <- as.integer(max_expansions)
   representation <- v3_align_representation(representation)
-  scenarios <- v3_rm_scenario_table(representation$coordinate_info, Mbar, pre_window = representation[["restriction_window"]])
+  spec <- representation[["restriction_spec"]]
+  scenarios <- v3_rm_scenario_table(representation$coordinate_info, Mbar, pre_window = representation[["restriction_window"]], spec = spec)
   plugin_restriction <- v3_rm_plugin_restriction(
-    representation$coordinate_info, representation$betahat, Mbar, pre_window = representation[["restriction_window"]]
+    representation$coordinate_info, representation$betahat, Mbar, pre_window = representation[["restriction_window"]], spec = spec
   )
   plugin_built <- v3_reduce_polyhedral_representation(
     representation, plugin_restriction
   )
-  plugin <- v3_plugin_identified_set(plugin_built, scope = "post_connected")
+  plugin <- v3_plugin_identified_set(plugin_built, scope = "post_connected", allow_empty = TRUE)
   target_se <- sqrt(as.numeric(
     t(plugin_built$target_bar) %*% plugin_built$Sigma_bar %*%
       plugin_built$target_bar

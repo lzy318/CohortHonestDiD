@@ -7,24 +7,32 @@
 #'
 #' @param fit A fitted object returned by \code{\link{cohort_fit}()} or
 #'   \code{\link{cohort_input}()}.
-#' @param restriction Either \code{"SD"} (smoothness) or \code{"RM"} (relative
-#'   magnitudes).
-#' @param M Nonnegative sensitivity bounds. SD bounds are in outcome units;
-#'   RM bounds are dimensionless multiples of each cohort's pre-period benchmark.
+#' @param restriction One of nine names: \code{"SD"} (smoothness), \code{"RM"}
+#'   (relative magnitudes), \code{"SDB"} and \code{"SDM"} (SD with a sign or
+#'   monotonicity restriction), \code{"RMB"} and \code{"RMM"} (the same with
+#'   RM), \code{"SDRM"} (relative magnitudes of second differences), and
+#'   \code{"SDRMB"} and \code{"SDRMM"} (the same with SDRM). See the section
+#'   "Sign, monotonicity, and SDRM restrictions".
+#' @param M Nonnegative sensitivity bounds. SD, SDB, and SDM bounds are in
+#'   outcome units. RM, RMB, and RMM bounds are multiples of each cohort's
+#'   largest pre-treatment first difference; SDRM, SDRMB, and SDRMM bounds are
+#'   multiples of its largest pre-treatment second difference.
 #' @param target \code{"att"}, \code{"dynamic"}, or \code{"cohort-dynamic"}.
 #' @param framework \code{"cohort"} (default) or \code{"aggregate"}.
 #' @param method \code{"FLCI"}, \code{"Conditional"}, or \code{"C-LF"}. The
-#'   default, \code{NULL}, is C-LF under both SD and RM, as the paper
-#'   recommends. FLCI is available only under SD.
-#' @param full.path For SD, restrict pure pre-treatment curvature as well?
-#'   The default, \code{NULL}, is TRUE for FLCI and FALSE (post-only) for
-#'   Conditional and C-LF, so the default SD analysis is C-LF under the
-#'   post-only restriction. Not applicable to RM.
+#'   default, \code{NULL}, is C-LF under every restriction. FLCI is available
+#'   only under SD.
+#' @param full.path For SD, SDB, and SDM, restrict pure pre-treatment curvature
+#'   as well? SDM then also restricts the pure pre-treatment steps. The default,
+#'   \code{NULL}, is TRUE for FLCI and FALSE (post-only) for Conditional and
+#'   C-LF, so the default SD analysis is C-LF under the post-only restriction.
+#'   Supplying it under the other six restrictions is an error.
 #' @param conf.level Pointwise confidence level in (0.5, 1), default 0.95.
 #' @param parallel Logical; run independent inference tasks in parallel?
 #' @param cores Number of workers. Defaults to detected logical cores minus one,
 #'   with a minimum of one. Workers are capped by the number of independent
-#'   target/bound tasks, or signed components for a single RM task.
+#'   target/bound tasks, or signed components for a single task under RM, RMB,
+#'   RMM, SDRM, SDRMB, or SDRMM.
 #' @param seed Optional integer seed. Fixed seeds give results independent of
 #'   worker count and preserve the caller's random-number state.
 #' @param control Named list of numerical controls; see the section
@@ -43,7 +51,10 @@
 #'   at radius 8: the effective initial count grows enough to keep the initial
 #'   spacing no coarser than that reference. At \code{grid.radius <= 8},
 #'   \code{grid.points} remains the literal initial count. Larger ranges require
-#'   more evaluations and may exhaust the unchanged cumulative budget.
+#'   more evaluations and may exhaust the unchanged cumulative budget. Under
+#'   Conditional with SDB, SDM, RMB, RMM, SDRMB, or SDRMM, \code{topology.audit}
+#'   defaults to \code{FALSE}; set it to \code{TRUE} to run the interior mesh
+#'   checks.
 #' @param balanced Logical. If \code{TRUE}, the target and, under aggregate
 #'   inference, the aggregated event study use only the relative periods
 #'   observed for every cohort, the balanced window. Default \code{FALSE}. See
@@ -52,6 +63,10 @@
 #'   \code{"full"} (used when \code{NULL}) restricts each cohort's whole path,
 #'   and \code{"window"} restricts each cohort's path only inside the balanced
 #'   window. Supplying it otherwise is an error.
+#' @param direction \code{"positive"} or \code{"negative"} for SDB, RMB, and
+#'   SDRMB; \code{"increasing"} or \code{"decreasing"} for SDM, RMM, and SDRMM.
+#'   It applies to every cohort and must be \code{NULL} under SD, RM, and SDRM.
+#'   See the section "Sign, monotonicity, and SDRM restrictions".
 #' @return A \code{cohort_sensitivity} object containing \code{intervals} (one
 #'   row per connected confidence-set component), \code{estimates},
 #'   \code{settings}, and detailed \code{results}. Empty sets and numerical
@@ -157,6 +172,54 @@
 #' their covariance (\code{Sigma}), the aggregate \code{normalization},
 #' \code{coordinate_info}, and the aggregate target weights (\code{targets}, one
 #' row per target).
+#' @section Sign, monotonicity, and SDRM restrictions:
+#' The paper and its simulations do not cover SDB, SDM, RMB, RMM, SDRM, SDRMB,
+#' and SDRMM. Conditional and C-LF still apply, because each is a set of linear
+#' inequalities on the block biases or a finite union of such sets. Prefer C-LF,
+#' the default. A Conditional confidence set can keep values that C-LF rejects,
+#' and under RMB and RMM Conditional can run much longer and end as
+#' \code{domain_stability_limit}.
+#'
+#' SDB, RMB, and SDRMB compare each post-treatment period with period 0.
+#' \code{direction = "positive"} requires a cohort's block bias to be at least
+#' its value at period 0, and \code{"negative"} reverses the inequality. SDM,
+#' RMM, and SDRMM compare each period with the one before it, from period 0
+#' onward. \code{"increasing"} requires the block bias not to fall from one
+#' period to the next, and \code{"decreasing"} reverses the inequality. The sign
+#' is measured from period 0 for every estimator, so on a balanced panel
+#' imputation and CS-NYT give the same cohort inference under all nine
+#' restrictions when controls and seeds match. When \code{direction} is used,
+#' \code{settings} also contains it.
+#'
+#' SDRM bounds each post-treatment second difference by \code{M} times the
+#' cohort's largest absolute pre-treatment second difference. SDRM, SDRMB, and
+#' SDRMM need three pre-treatment coefficients per cohort, counting period 0.
+#' With fewer, the status is \code{insufficient_prehistory}.
+#'
+#' RM, SDRM, and their sign and monotonicity versions are unions of signed
+#' components. With \code{n} pre-treatment coefficients in a cohort, counting
+#' period 0, and \code{M} above zero, their number is the product over cohorts
+#' of \code{2 * (n - 1)} under RM, RMB, and RMM and of \code{2 * (n - 2)} under
+#' SDRM, SDRMB, and SDRMM. A task above \code{max.components} ends with status
+#' \code{inference_error}. Aggregate inference has one path, so it needs far
+#' fewer components.
+#'
+#' Under C-LF, status \code{empty} means that every value of the target is
+#' rejected at that bound, so the data reject the restriction there. It can
+#' occur under SDB, SDM, SDRMB, and SDRMM. A Conditional search that accepts no
+#' value ends as \code{uncertified_empty_search}. Status \code{disconnected}
+#' means several components, which can lie far apart, so keep every row of
+#' \code{intervals}. Under C-LF a gap narrower than the grid can end as
+#' \code{topology_audit_failure}. \code{topology.audit = FALSE} then returns a
+#' set, but such a gap can go unnoticed.
+#'
+#' The nine restrictions agree with HonestDiD 0.2.8 in the package tests, on one
+#' event study passed to \code{\link{cohort_input}()}. At \code{M = 0} the
+#' package departs from HonestDiD under RMM and RMB. It drops the inequalities
+#' that repeat exactly, because an exact tie distorts the conditional test, and
+#' HonestDiD keeps them. RMM at \code{M = 0} therefore equals RM here. The
+#' section "Restrictions beyond SD and RM" of
+#' \code{vignette("detailed-guide", package = "CohortHonestDiD")} has examples.
 #' @export
 #' @examples
 #' data(minimum_wage)
@@ -169,19 +232,25 @@
 #' balanced <- cohort_sensitivity(fit, M = 0.01, framework = "aggregate",
 #'                                balanced = TRUE, seed = 1)
 #' balanced$settings$window
+#' # A sign restriction on the block biases.
+#' signed <- cohort_sensitivity(fit, restriction = "SDB", M = 0.01,
+#'                              direction = "negative", seed = 1)
+#' signed
 #' }
 cohort_sensitivity <- function(fit, restriction = "SD", M,
                                target = "att", framework = "cohort",
                                method = NULL, full.path = NULL, conf.level = 0.95,
                                parallel = FALSE, cores = NULL, seed = NULL,
-                               control = list(), balanced = FALSE, cohort.paths = NULL) {
+                               control = list(), balanced = FALSE, cohort.paths = NULL,
+                               direction = NULL) {
   if (!inherits(fit, "cohort_fit")) stop("fit must be a cohort_fit object.", call. = FALSE)
   for (key in c("restriction", "target", "framework")) {
     value <- get(key)
     .hc_assert(is.character(value) && length(value) == 1L && !is.na(value),
                paste0(key, " must be one character string."))
   }
-  restriction <- match.arg(toupper(restriction), c("SD", "RM"))
+  restriction <- match.arg(toupper(restriction), .hc_restrictions)
+  spec <- .hc_restriction_spec(restriction)
   target <- match.arg(target, c("att", "dynamic", "cohort-dynamic"))
   framework <- match.arg(framework, c("cohort", "aggregate"))
   if (target == "cohort-dynamic" && framework == "aggregate") {
@@ -199,10 +268,11 @@ cohort_sensitivity <- function(fit, restriction = "SD", M,
     stop("method must be FLCI, Conditional, or C-LF.", call. = FALSE)
   }
   method <- c(flci = "flci", conditional = "conditional", clf = "c_lf")[[key]]
-  if (restriction == "RM" && method == "flci") stop("FLCI is available only under SD.", call. = FALSE)
-  if (restriction == "RM" && !is.null(full.path)) stop("full.path applies only to SD.", call. = FALSE)
-  if (restriction == "SD" && is.null(full.path)) full.path <- method == "flci"
-  if (restriction == "SD" && (!is.logical(full.path) || length(full.path) != 1L || is.na(full.path))) {
+  if (restriction != "SD" && method == "flci") stop("FLCI is available only under SD.", call. = FALSE)
+  .hc_check_direction(spec, direction)
+  if (spec$base != "SD" && !is.null(full.path)) stop("full.path applies only to SD, SDB, and SDM.", call. = FALSE)
+  if (spec$base == "SD" && is.null(full.path)) full.path <- method == "flci"
+  if (spec$base == "SD" && (!is.logical(full.path) || length(full.path) != 1L || is.na(full.path))) {
     stop("full.path must be TRUE or FALSE.", call. = FALSE)
   }
   if (!is.numeric(conf.level) || length(conf.level) != 1L || !is.finite(conf.level) || conf.level <= 0.5 || conf.level >= 1) {
@@ -244,7 +314,7 @@ cohort_sensitivity <- function(fit, restriction = "SD", M,
       k <- length(tasks) + 1L
       tasks[[k]] <- list(representation = rep, restriction = restriction, M = m,
                         method = method, full.path = full.path, alpha = 1 - conf.level,
-                        seed = 0L, control = control)
+                        seed = 0L, control = control, direction = direction)
       task_info[[k]] <- list(target = one$id, label = one$label, cohort = one$cohort,
                              relative_period = one$relative_period, M = m)
     }
@@ -254,12 +324,12 @@ cohort_sensitivity <- function(fit, restriction = "SD", M,
   # The public switch controls all worker pools; never nest component workers
   # inside the outer target/bound pool.
   for (k in seq_along(tasks)) tasks[[k]]$control$component.cores <- 1L
-  if (parallel && length(tasks) == 1L && restriction == "RM") {
+  if (parallel && length(tasks) == 1L && spec$base != "SD") {
     tasks[[1L]]$control$component.cores <- as.integer(cores)
   }
   results <- .hc_run_tasks(tasks, parallel, as.integer(cores))
   used.cores <- if (parallel) min(cores, length(tasks)) else 1L
-  if (parallel && length(tasks) == 1L && restriction == "RM") {
+  if (parallel && length(tasks) == 1L && spec$base != "SD") {
     actual <- results[[1L]]$diagnostics$component.cores
     if (length(actual) == 1L && is.finite(actual)) used.cores <- actual
   }
@@ -297,6 +367,7 @@ cohort_sensitivity <- function(fit, restriction = "SD", M,
                                  parallel = parallel, cores = used.cores,
                                  seed = seed, task.seeds = seeds, control = control),
                  diagnostics = fit$diagnostics), class = "cohort_sensitivity")
+  if (!is.null(direction)) out$settings$direction <- direction
   if (balanced) {
     out$settings$balanced <- TRUE
     out$settings$cohort.paths <- if (framework == "cohort") cohort.paths else NA_character_

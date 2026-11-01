@@ -386,7 +386,7 @@
   delta <- CVXR::Variable(base::NCOL(A))
   objective <- CVXR::Maximize(base::t(v) %*% delta)
   problem <- CVXR::Problem(objective, constraints = base::list(A %*% delta - d<= 0) )
-  soln <- CVXR::solve(problem)
+  soln <- flci_cvxr_run(problem)
   base::return(soln)
 }
 
@@ -395,7 +395,7 @@
   delta <- CVXR::Variable(base::NCOL(A))
   objective <- CVXR::Minimize(base::t(v) %*% delta)
   problem <- CVXR::Problem(objective, constraints = base::list(A %*% delta - d<= 0) )
-  soln <- CVXR::solve(problem)
+  soln <- flci_cvxr_run(problem)
   base::return(soln)
 }
 

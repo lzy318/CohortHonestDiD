@@ -157,6 +157,18 @@ flci_validate_solver_opts <- function(solver_opts) {
   invisible(solver_opts)
 }
 
+# CVXR before 1.8 exports solve(), which returns a list with value, status and
+# getValue. From 1.8 on it exports psolve(), which returns the optimal value; the
+# status and the variable values are read from the problem and the variables.
+flci_cvxr_run <- function(problem, args = list()) {
+  if ("solve" %in% getNamespaceExports("CVXR")) {
+    return(do.call(getExportedValue("CVXR", "solve"), c(list(problem), args)))
+  }
+  value <- do.call(getExportedValue("CVXR", "psolve"), c(list(problem), args))
+  list(value = value, status = getExportedValue("CVXR", "status")(problem),
+       getValue = function(variable) getExportedValue("CVXR", "value")(variable))
+}
+
 flci_cvxr_solve <- function(problem, solver, solver_opts = list()) {
   if (!requireNamespace("CVXR", quietly = TRUE)) {
     flci_stop("CVXR is required for this exploratory optimization.")
@@ -174,10 +186,7 @@ flci_cvxr_solve <- function(problem, solver, solver_opts = list()) {
       paste(installed, collapse = ", "), "."
     )
   }
-  do.call(
-    CVXR::solve,
-    c(list(problem, solver = solver), solver_opts)
-  )
+  flci_cvxr_run(problem, c(list(solver = solver), solver_opts))
 }
 
 flci_assert_cvxr_status <- function(status, context) {

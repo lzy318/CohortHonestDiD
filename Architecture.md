@@ -1,6 +1,6 @@
 # Architecture — CohortHonestDiD
 
-> Architecture of CohortHonestDiD 1.0.0. The diagrams below map the modules, the call chains from the exported
+> Architecture of CohortHonestDiD 1.1.0. The diagrams below map the modules, the call chains from the exported
 > functions to the bundled engine, and the data flow; a reference table follows each diagram.
 
 ## Overview
@@ -8,11 +8,15 @@
 CohortHonestDiD implements cohort-anchored HonestDiD sensitivity analysis for difference-in-differences designs with
 staggered adoption, as proposed in Liu (2026), "Cohort-Anchored HonestDiD" (arXiv:2509.01829). It estimates full
 cohort-period coefficients and their joint cluster covariance, then applies the smoothness (SD) and
-relative-magnitude (RM) restrictions of Rambachan and Roth (2023) to each cohort's block bias through an
-estimator-specific bias map `W`. The package accepts either a panel (`cohort_fit()`) or named external estimates
+relative-magnitude (RM) restrictions of Rambachan and Roth (2023), or one of seven further restrictions built on them,
+to each cohort's block bias through an estimator-specific bias map `W`.
+The package accepts either a panel (`cohort_fit()`) or named external estimates
 (`cohort_input()`). Both routes produce the same `cohort_fit` representation; `cohort_sensitivity()` returns every
 confidence-set component together with explicit task statuses. Following the paper, `cohort_sensitivity()` uses the
 C-LF procedure by default, under the post-only restriction for SD; FLCI and Conditional are available by name.
+FLCI exists only under SD. SDB, SDM, RMB, RMM, SDRMB and SDRMM add sign or monotonicity rows, set by the last argument
+`direction`, and SDRM applies RM to second differences. These seven run under Conditional and C-LF only, and the
+paper's simulations do not cover them. "Restriction detail" below has the rows.
 The covariance is the cluster-robust CR1 by default; `cohort_fit(covariance = "CR2")` gives the bias-reduced CR2
 covariance of Bell and McCaffrey (2002), which the paper recommends with Conditional or C-LF inference when some
 cohorts contain only a few units or clusters. With `cohort_sensitivity(balanced = TRUE)` the targets use only the
@@ -26,7 +30,8 @@ each weight's contribution to the FLCI center, by element or summed by cohort; `
 them as a heatmap against the bound. The package is written in R (>= 4.1.0). `Matrix` supports sparse estimation,
 `ggplot2` supplies plots, `parallel` and `withr` run reproducible worker tasks, and a bundled private numerical engine
 under `inst/upstream/R/` uses the linear-programming (`Rglpk`, `lpSolveAPI`), normal-probability (`mvtnorm`,
-`TruncatedNormal`) and matrix packages listed in Imports. The optional nested FLCI solver uses `CVXR` (Suggests).
+`TruncatedNormal`) and matrix packages listed in Imports. The optional nested FLCI solver uses `CVXR` (Suggests),
+through `flci_cvxr_run`, which serves CVXR versions before and after the change of the solve interface in 1.8.
 
 ### Repository layout
 
@@ -39,10 +44,11 @@ under `inst/upstream/R/` uses the linear-programming (`Rglpk`, `lpSolveAPI`), no
 | `inst/CITATION` | `citation("CohortHonestDiD")`: the paper and the package | Yes |
 | `man/` (8 Rd files) | Help pages `cohort_fit`, `cohort_input`, `cohort_sensitivity`, `flci_weights`, `build_W`, `plot_cohort`, `paper_palette`, `minimum_wage`; the argument reference of the package | Yes |
 | `data/minimum_wage.rda` | County panel of the minimum-wage application (15,988 rows, 28 columns) | Yes |
-| [`vignettes/getting-started.Rmd`](vignettes/getting-started.Rmd) | Short walkthrough of the minimum-wage application with the defaults: estimation, the default C-LF analysis under SD, the other procedures and scopes (shown, not run; the FLCI paragraph points to `plot(flci, type = "weights")` and the detailed guide), dynamic and cohort-dynamic targets, the aggregate benchmark with a short paragraph on balanced aggregation (no chunk), RM (shown, not run), data requirements and diagnostics, a CR2 fit, and a short note on numerical results with pointers to the detailed guide and help pages for numerical controls and external estimates | Yes |
-| [`vignettes/detailed-guide.Rmd`](vignettes/detailed-guide.Rmd) | Assumptions and terms; estimation with the three estimators; weights, clusters, panel histories and the CR2 covariance; targets and representations, with a full-path FLCI comparison, an executed balanced example on the minimum-wage fit (subsection "Balanced targets and balanced aggregation": cohort inference with full and window paths, and aggregate inference) and an executed FLCI weights example (subsection "FLCI weights": the post-only and full-path weights `v`, the weights `gamma` with cell labels, a table of centers and sums of contributions, and the cohort sums); procedures and SD scopes; RM; reading results (with a pointer to `flci_weights()`) and outcome statuses; numerical controls and FLCI solvers; external estimates and `W`; plots (with the weights heatmap). The procedure, RM, result-reading, control and external-input examples use a small artificial panel | Yes |
-| `tests/testthat.R`, `tests/testthat/` (16 files) | testthat (edition 3) suite: fits, external input, sensitivity, default procedures, CR2 covariance, balanced targets and balanced aggregation, FLCI weights, RM, refinement, Conditional domains, boundaries, plots, method equivalence, session state, adversarial oracles | Yes |
+| [`vignettes/getting-started.Rmd`](vignettes/getting-started.Rmd) | Short walkthrough of the minimum-wage application with the defaults: estimation, the default C-LF analysis under SD, the other procedures and scopes (shown, not run; the FLCI paragraph points to `plot(flci, type = "weights")` and the detailed guide), dynamic and cohort-dynamic targets, the aggregate benchmark with a short paragraph on balanced aggregation (no chunk), RM (shown, not run) with a one-sentence pointer to the further restrictions, data requirements and diagnostics, a CR2 fit, and a short note on numerical results with pointers to the detailed guide and help pages for numerical controls and external estimates | Yes |
+| [`vignettes/detailed-guide.Rmd`](vignettes/detailed-guide.Rmd) | Assumptions and terms; estimation with the three estimators; weights, clusters, panel histories and the CR2 covariance; targets and representations, with a full-path FLCI comparison, an executed balanced example on the minimum-wage fit (subsection "Balanced targets and balanced aggregation": cohort inference with full and window paths, and aggregate inference) and an executed FLCI weights example (subsection "FLCI weights": the post-only and full-path weights `v`, the weights `gamma` with cell labels, a table of centers and sums of contributions, and the cohort sums); procedures and SD scopes; RM; restrictions beyond SD and RM (section "Restrictions beyond SD and RM": the nine values, `direction`, SDB and SDM on the minimum-wage fit, empty and disconnected sets, the choice of procedure, RMB and RMM on the small artificial panel, SDRM and SDRMM on a longer artificial panel, case counts, and the comparison with HonestDiD); reading results (with a pointer to `flci_weights()`) and outcome statuses; numerical controls and FLCI solvers; external estimates and `W`; plots (with the weights heatmap). The procedure, RM, result-reading, control and external-input examples use a small artificial panel | Yes |
+| `tests/testthat.R`, `tests/testthat/` (17 files) | testthat (edition 3) suite: fits, external input, sensitivity, default procedures, CR2 covariance, balanced targets and balanced aggregation, FLCI weights, RM, the seven further restrictions (with stored HonestDiD reference numbers), refinement, Conditional domains, boundaries, plots, method equivalence, session state, adversarial oracles | Yes |
 | [`README.md`](README.md), `LICENSE` | Repository front page, CRAN-style license stub | Yes |
+| [`NEWS.md`](NEWS.md) | Release notes, from 1.0.0 on | Yes |
 | `LICENSE.md` | Full MIT license text | No (build-ignored) |
 | `Architecture.md` | This file | No (build-ignored) |
 | `data-raw/prepare-minimum-wage.R` | Adds the convenience aliases to the study input to produce `data/minimum_wage.rda`; the input file is not in the repository | No (build-ignored) |
@@ -156,6 +162,9 @@ live in these files:
   that `flci.R` and the engine store;
 - `inference_sd.R`, `inference_rm.R`, `restriction_geometry.R` and `inference_adapter.R` pass the window's lower end
   to the restriction operators under `cohort.paths = "window"` (see "Balanced detail" below);
+- `inference_support.R` holds the list of restrictions and the `direction` check, `restriction_geometry.R` builds the
+  sign, monotonicity and SDRM rows, and `inference_sd.R` and `inference_rm.R` attach them, as "Restriction detail"
+  below shows;
 - `parallel.R`, `utils-engine.R`, `inference_rm.R` and `inference_engine.R` are the four files that name the package
   at run time (see "Package-name lookups" below).
 
@@ -168,7 +177,7 @@ operators get `pre_window = NULL` and drop no row.
 | --- | --- | --- | --- |
 | `R/input.R` | API | Validate and complete the panel registry; forward-fill D; prepare working weights and observations; validate the covariance option (`covariance = "CR1"`, after `...`) and record `covariance_convention` and, for CR2 fits, `cluster_shares`; documents `minimum_wage` | `cohort_fit` |
 | `R/external_input.R` | API | Align named coefficients, covariance, `W` and normalization constraints; `vcov` is used as supplied | `cohort_input` |
-| `R/sensitivity.R` | API | Validate options and resolve the method and scope defaults (`method = NULL` means C-LF under SD and RM); set up the balanced window (formals `balanced = FALSE` and `cohort.paths = NULL`, after `control`); form target/bound tasks; assemble public status and interval rows, the settings and, for balanced aggregate results, the `aggregation` element | `cohort_sensitivity` |
+| `R/sensitivity.R` | API | Validate options and resolve the method and scope defaults (`method = NULL` means C-LF under every restriction); check `direction` (last formal, default `NULL`); set up the balanced window (formals `balanced = FALSE` and `cohort.paths = NULL`, after `control`); form target/bound tasks; assemble public status and interval rows, the settings and, for balanced aggregate results, the `aggregation` element | `cohort_sensitivity` |
 | `R/weights.R` | API | FLCI weights: for each target with weights, rebuild the representation the result used, build its second-difference operators, the post-only weights `v^P`, the estimated second differences and the post-only center in closed form, check them against the stored `gamma` and coefficient weights, and return `v = v^P + D'gamma` or `gamma` with estimates and contributions, by element or summed by cohort; helpers `.hc_flci_operators`, `.hc_flci_reconstruct`, `.hc_flci_cohort_sums`, `.hc_flci_weights_method`, `.hc_flci_weights_no_cohorts`, `.hc_flci_weights_fail` and `.hc_flci_weights_empty`; constants `.hc_weights_rank_tolerance` (1e-10) and `.hc_weights_check_tolerance` (1e-8) | `flci_weights` |
 | `R/estimate_imp.R` | Estimation | Sparse outcome operator and untreated unit/time fixed-effect correction; operator application and cluster scores | None |
 | `R/estimate_cs_nyt.R`, `R/estimate_cs_nt.R` | Estimation | Weighted paired long differences with not-yet-treated or never-treated comparisons | None |
@@ -180,20 +189,20 @@ operators get `pre_window = NULL` and drop no row.
 | `R/parallel.R` | Tasks | Fixed task seeds, serial/socket dispatch and worker cleanup | None |
 | `R/utils-engine.R` | Representation | Numerical controls, alignment to canonical coordinates, regular grid with optional certified bounds, result/failure constructors, private engine loading from the namespace path | None |
 | `R/utils-search.R` | Tasks | Shared point-evaluation budget and cache; eligible refinements and attempt diagnostics | None |
-| `R/utils-conditional-search.R` | Tasks | Conditional domain construction, bilateral expansion, interior and endpoint audits, remembered acceptance checks and range diagnostics | None |
-| `R/inference_support.R` | Inference | Common task entry; prehistory and deterministic-target checks | None |
-| `R/inference_sd.R` | Inference | SD restriction and plug-in set; FLCI, Conditional or C-LF; C-LF support bounds prepared once for all attempts; passes the representation's `restriction_window` to `v3_sd_restriction` as `pre_window` | None |
+| `R/utils-conditional-search.R` | Tasks | Conditional domain construction (linear continuation for the bases SD and SDRM, constant for RM), bilateral expansion, interior and endpoint audits, remembered acceptance checks and range diagnostics | None |
+| `R/inference_support.R` | Inference | The nine restriction names, `.hc_restriction_spec` and `.hc_check_direction`; common task entry; prehistory and deterministic-target checks; dispatch on `spec$base` | None |
+| `R/inference_sd.R` | Inference | SD, SDB and SDM: the SD restriction, the sign or monotonicity rows attached after the reduction, and the plug-in set; FLCI, Conditional or C-LF; C-LF support bounds prepared once for all attempts; passes the representation's `restriction_window` to `v3_sd_restriction` as `pre_window` | None |
 | `R/flci.R` | Inference | FLCI rule and interval adapter; stores each result's `weights` (`gamma` and the coefficient weights), which `flci_weights()` reads | None |
-| `R/inference_rm.R` | Inference | Signed RM components, optional component workers and component union; under window paths, counts the signed components from the benchmark pairs inside the window and passes `pre_window` to the scenario table and the plug-in restriction | None |
-| `inst/upstream/R/restriction_geometry.R` | Private engine | Coordinate parsing, first/second differences, SD and RM restriction matrices, RM signed scenarios; the optional argument `pre_window = NULL` of `v3_first_difference_operator`, `v3_second_difference_operator`, `v3_sd_restriction`, `v3_rm_scenario_table`, `v3_rm_component_restriction` and `v3_rm_plugin_restriction` drops only pure pre-treatment rows that reach before the window | None |
-| `inst/upstream/R/inference_adapter.R` | Private engine | Normalization reduction, plug-in sets, ARP geometry, RM union calculations, reusable support context and budgeted sentinel tests; `v3_prepare_rm_union` and `v3_clf_rm_union` pass `restriction_window` to the RM scenario table and plug-in restriction | None |
+| `R/inference_rm.R` | Inference | The union path, for the bases RM and SDRM: signed components, optional component workers and component union; under window paths, counts the signed components from the benchmarks inside the window and passes `pre_window` to the scenario table and the plug-in restriction; gives the Conditional search the unshaped plug-in set as `guide` | None |
+| `inst/upstream/R/restriction_geometry.R` | Private engine | Coordinate parsing, first/second differences, SD and RM restriction matrices, signed scenarios; sign and monotonicity rows (`v3_shape_rows`, `v3_attach_shape`) and the RM or SDRM benchmark operator (`v3_benchmark_operator`), see "Restriction detail"; the optional argument `pre_window = NULL` of `v3_first_difference_operator`, `v3_second_difference_operator`, `v3_sd_restriction`, `v3_rm_scenario_table`, `v3_rm_component_restriction` and `v3_rm_plugin_restriction` drops only pure pre-treatment rows that reach before the window | None |
+| `inst/upstream/R/inference_adapter.R` | Private engine | Normalization reduction, plug-in sets, ARP geometry, union calculations, reusable support context and budgeted sentinel tests; `v3_prepare_rm_union` and `v3_clf_rm_union` pass `restriction_window` and `restriction_spec` to the scenario table and plug-in restriction, and the latter allows an empty plug-in set | None |
 | `inst/upstream/R/inference_engine.R` | Private engine | FLCI preparation, Gaussian tests, confidence-set inversion with explicit expansion spacing, endpoint and topology audits; loads the FLCI core and HonestDiD routines | None |
-| `inst/upstream/R/flci_core.R` | Private engine | Folded-normal objective, direct/nested optimization and PSD limits | None |
+| `inst/upstream/R/flci_core.R` | Private engine | Folded-normal objective, direct/nested optimization and PSD limits; `flci_cvxr_run`, the one call into CVXR's solve function | None |
 | `inst/upstream/R/arp-nuisance.R` | Private engine | Gaussian moment-inequality (ARP) calculations adapted from HonestDiD | None |
-| `R/methods.R` | Output | S3 accessors; print/summary with the covariance label (`.hc_covariance_label`; summary objects end with `covariance`) and, for balanced results, the balanced-window line (`.hc_balanced_label`); Conditional searched-range tables | `coef`, `vcov`, `print` and `summary` methods |
-| `R/plot.R`, `R/palette.R` | Output | Component-preserving plots and paper colors; bounded-search and balanced-window plot captions; FLCI weights heatmap (`type = "weights"`, drawn by `.hc_plot_weights`) | `plot` methods; `paper_palette` |
+| `R/methods.R` | Output | S3 accessors; print/summary with the restriction label (`.hc_restriction_label`), the covariance label (`.hc_covariance_label`; summary objects end with `covariance`) and, for balanced results, the balanced-window line (`.hc_balanced_label`); Conditional searched-range tables | `coef`, `vcov`, `print` and `summary` methods |
+| `R/plot.R`, `R/palette.R` | Output | Component-preserving plots and paper colors; restriction, bounded-search and balanced-window plot captions; FLCI weights heatmap (`type = "weights"`, drawn by `.hc_plot_weights`) | `plot` methods; `paper_palette` |
 | `R/imports.R`, `NAMESPACE`, `DESCRIPTION` | Package | Import declarations, exports, S3 registrations and metadata | 6 exported functions |
-| `data/`, `man/`, `vignettes/`, `README.md`, `inst/CITATION` | Data/docs | Application data, help pages, two vignettes, front page, citation | `minimum_wage` data |
+| `data/`, `man/`, `vignettes/`, `README.md`, `NEWS.md`, `inst/CITATION` | Data/docs | Application data, help pages, two vignettes, front page, release notes, citation | `minimum_wage` data |
 | `tests/testthat.R`, `tests/testthat/` | Tests | Regression and independent public-interface checks | None |
 
 ---
@@ -251,13 +260,14 @@ Arrows follow the order of calls and the objects they produce. `cohort_fit` pass
 | `build_W` | `mapping.R` | User / `cohort_fit` | `create_delta_to_Delta_mapping_matrix` | Map primitive deviations to coefficient bias |
 | `.hc_fit_diagnostics` | `diagnostics.R` | `cohort_fit` | Cohort, cell and eigenvalue summaries | Support and covariance diagnostics stored on the fit, computed from whichever `Sigma` was estimated |
 | `cohort_input` | `external_input.R` | User | `.hc_check_mapping_support` and validation | Construct the same object from external estimates; the supplied `vcov` is used as given |
-| `cohort_sensitivity` | `sensitivity.R` | User | Controls, balanced window, targets, representations, seeds and task runner | Resolve `method` (NULL means C-LF) and, for SD, `full.path` (NULL means TRUE only for FLCI); with `balanced = TRUE`, validate `cohort.paths` (NULL means `"full"` under cohort inference), compute the window and record it; return estimates and all confidence-set components |
+| `cohort_sensitivity` | `sensitivity.R` | User | Direction check, controls, balanced window, targets, representations, seeds and task runner | Resolve `method` (NULL means C-LF) and, for SD, SDB and SDM, `full.path` (NULL means TRUE only for FLCI); with `balanced = TRUE`, validate `cohort.paths` (NULL means `"full"` under cohort inference), compute the window and record it; return estimates and all confidence-set components |
 | `.hc_balanced_window` | `targets.R` | `cohort_sensitivity` (balanced only) | None | The balanced window `c(lower = L, upper = S)` from `coordinate_info` (see "Balanced detail") |
 | `.hc_check_window_paths` | `targets.R` | `cohort_sensitivity` (`cohort.paths = "window"` only) | None | Reject a `W` or normalization that links a kept coefficient to one after the window |
 | `.hc_targets`, `.hc_representation` | `targets.R` | `cohort_sensitivity` | Mass normalization and matrix transforms | Preserve the requested estimand across frameworks; with a `window` (both functions; `NULL` unless `balanced = TRUE`), restrict targets to periods 1 to `S`, form the aggregate path on `L` to `S`, or, under window paths (argument `paths` of `.hc_representation`), drop the post-treatment coefficients after `S` |
 | `.hc_task_seeds` | `parallel.R` | `cohort_sensitivity` | None | Deterministic per-task seeds, independent of worker count |
 | `.hc_run_tasks`, `.hc_task` | `parallel.R` | `cohort_sensitivity` | `.hc_infer_one`, `withr`, `parallel` | Reproducible execution with worker cleanup |
-| `print.cohort_fit`, `summary.cohort_fit`, `print.summary_cohort_fit`, `print.cohort_sensitivity`, `summary.cohort_sensitivity`, `print.summary_cohort_sensitivity` | `methods.R` | User | `.hc_covariance_label`, `.hc_balanced_label`; searched-range helpers | Printed headers name the procedure, scope and covariance, and for balanced results the window |
+| `print.cohort_fit`, `summary.cohort_fit`, `print.summary_cohort_fit`, `print.cohort_sensitivity`, `summary.cohort_sensitivity`, `print.summary_cohort_sensitivity` | `methods.R` | User | `.hc_restriction_label`, `.hc_covariance_label`, `.hc_balanced_label`; searched-range helpers | Printed headers name the restriction and its direction, the procedure, scope and covariance, and for balanced results the window |
+| `.hc_restriction_label` | `methods.R` | `print.cohort_sensitivity`, `plot.cohort_sensitivity` | None | The restriction name, followed by `, <direction>` when `settings` holds one |
 | `.hc_covariance_label` | `methods.R` | Print and summary methods | None | `CR1 cluster-robust, G clusters`, `CR2 bias-reduced cluster-robust, G clusters`, `supplied to cohort_input()` for external input, or `not recorded` |
 | `.hc_balanced_label` | `methods.R` | `print.cohort_sensitivity`, `print.summary_cohort_sensitivity` (balanced only) | None | `Balanced window: relative periods L to S; target period 1` (or `target periods 1 to S`), then `; cohort paths: full`, `; cohort paths: window` or `; aggregate path on the window` |
 
@@ -385,16 +395,17 @@ graph TD
 
 Under `cohort.paths = "window"`, `.hc_infer_sd` and `.hc_infer_rm` pass the window's lower end
 (`restriction_window`) to the restriction operators; for every other representation the element is absent and no
-row is dropped. A call without `method` takes the C-LF branch. Inference uses the covariance only through the
+row is dropped. SD, SDB and SDM take the `.hc_infer_sd` branch, and the bases RM and SDRM take `.hc_infer_rm`.
+A call without `method` takes the C-LF branch. Inference uses the covariance only through the
 fit's `Sigma`, so CR1 and CR2 fits use the same code. A balanced aggregate representation enters this diagram like
 any other aggregate representation.
 
 | Function | Defined In | Called By | Calls | Purpose |
 | --- | --- | --- | --- | --- |
-| `.hc_infer_one` | `inference_support.R` | Task runner | SD/RM adapters or explicit failure constructor | Check prehistory and supported stochastic quantities |
+| `.hc_infer_one` | `inference_support.R` | Task runner | SD/RM adapters or explicit failure constructor | Check prehistory and supported stochastic quantities; set `restriction_spec` and dispatch on its base |
 | `.hc_engine_representation`, `.hc_backend` | `utils-engine.R` | Inference adapters | Private alignment; engine loading from the namespace path | Keep helpers private; support both installed and source-loaded resources |
-| `.hc_infer_sd` | `inference_sd.R` | Common task entry | Restriction/reduction, plug-in, FLCI or shared-budget Gaussian inversion; C-LF support LP | Apply either SD scope; prepare, calibrate and bound support once for all search attempts; pass `restriction_window` to `v3_sd_restriction` as `pre_window` |
-| `.hc_infer_rm` | `inference_rm.R` | Common task entry | Signed-component geometry, prepared support context and shared-budget union inversion | Preserve disconnected RM sets, calibration and worker state across retries; under window paths, count the signed components inside the window and pass `pre_window` to the scenario table and plug-in restriction |
+| `.hc_infer_sd` | `inference_sd.R` | Common task entry | Restriction/reduction, `v3_attach_shape`, plug-in, FLCI or shared-budget Gaussian inversion; C-LF support LP | Apply either SD scope to SD, SDB and SDM; prepare, calibrate and bound support once for all search attempts; pass `restriction_window` to `v3_sd_restriction` as `pre_window` |
+| `.hc_infer_rm` | `inference_rm.R` | Common task entry | Signed-component geometry, prepared support context and shared-budget union inversion | Serve the bases RM and SDRM; preserve disconnected sets, calibration and worker state across retries; under window paths, count the signed components inside the window and pass `pre_window` to the scenario table and plug-in restriction |
 | `.hc_search_budget` | `utils-search.R` | SD/RM adapters | Cached point-test callback | Count distinct test evaluations across searches, probes, audits and retries |
 | `.hc_adaptive_search` | `utils-search.R` | SD/RM C-LF adapters | Per-attempt inversion callback | Double regular grid intervals for eligible unresolved statuses within the limits |
 | `.hc_conditional_domain`, `.hc_conditional_search` | `utils-conditional-search.R` | SD/RM Conditional adapters | Cached point tests, fixed-domain inversion and endpoint audits | Search concentric domains with fixed regular spacing and require two successive adjacent-domain agreements; finer retries reuse the same cache and visited-range history |
@@ -405,6 +416,71 @@ any other aggregate representation.
 | `v3_clf_rm_union`, `v3_memoize_rm_union_test`, `v3_rm_verify_support_sentinels` | Private `inference_adapter.R` | RM adapter | Prepared component/support context, cached union tests and separately keyed sentinel tests | Reuse RM calibration and account for actual point work across refinements; `v3_clf_rm_union` and the `v3_prepare_rm_union` it calls pass `restriction_window` to the scenario table and plug-in restriction |
 | `v3_rm_lf_component_support` | Private `inference_adapter.R` | RM adapter and SD C-LF | Primal/dual-checked support endpoint LPs | Bound the necessary LF first-stage support with the realized cutoff |
 | `.hc_engine_result`, `.hc_engine_failure` | `utils-engine.R` | Inference adapters | Component/status assembly | Keep empty, unbounded, disconnected and unsupported results distinct |
+
+### Restriction detail
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+graph TD
+    Sens["cohort_sensitivity"] --> Spec[".hc_restriction_spec"]
+    Spec --> Check[".hc_check_direction"]
+    Check --> Task[".hc_infer_one_impl"]
+    Task --> Field["rep$restriction_spec"]
+    Field --> Base{"spec$base?"}
+    Base -- SD --> SD[".hc_infer_sd"]
+    Base -- RM or SDRM --> RM[".hc_infer_rm"]
+    SD --> Reduce["v3_reduce_representation"]
+    Reduce --> Attach["v3_attach_shape"]
+    Attach --> Shape["v3_shape_rows"]
+    RM --> Table["v3_rm_scenario_table"]
+    RM --> Comp["v3_rm_component_restriction"]
+    RM --> Plug["v3_rm_plugin_restriction"]
+    Table --> Bench["v3_benchmark_operator"]
+    Comp --> Shape
+    Plug --> Shape
+    Plug --> Guide["guide: unshaped plug-in"]
+    Guide --> Search[".hc_conditional_search"]
+    Attach --> Search
+    Search --> Domain[".hc_conditional_domain"]
+```
+
+`spec` is the list `(restriction, base, shape, direction)`. The base chooses the rows and the code path. `"SD"` serves
+SD, SDB and SDM on the SD path, `.hc_infer_sd`. `"RM"` serves RM, RMB and RMM, and `"SDRM"` serves SDRM, SDRMB and
+SDRMM, both on the union path, `.hc_infer_rm`. The shape is `"none"`, `"sign"` or `"monotone"`. The spec reaches the engine as
+`representation$restriction_spec`, the way `restriction_window` does, so nothing depends on session state on a worker.
+`v3_align_representation` and `.hc_engine_representation` keep the field. The diagram omits FLCI, which the entry
+refuses for every restriction but SD, and the C-LF branch, which reads the same field through `v3_clf_rm_union`.
+
+**What is computed.** All rows act on the block-bias path `Delta` as `A_Delta %*% Delta <= d`, per cohort `g` and with
+one direction for all cohorts. The relative period `s = 1` is the first treated period and `s = 0` the last untreated one.
+
+| Part | Rows | Goes with |
+| --- | --- | --- |
+| SD rows | `+-(Delta(g,s) - 2 Delta(g,s-1) + Delta(g,s-2)) <= M` for `s >= 1`; with `full.path = TRUE` also for `s <= 0` | Base SD |
+| RM rows | `+-(Delta(g,s) - Delta(g,s-1)) <= M * b_g` for `s >= 1`, with `b_g` a signed pure pre-treatment first difference; union over the signed choices | Base RM |
+| SDRM rows | `+-(Delta(g,s) - 2 Delta(g,s-1) + Delta(g,s-2)) <= M * b_g` for `s >= 1`, with `b_g` a signed pure pre-treatment second difference; union over the signed choices | Base SDRM |
+| Sign rows | positive: `Delta(g,0) - Delta(g,s) <= 0`; negative: reversed; for every `s >= 1` | Shape sign |
+| Monotonicity rows | increasing: `Delta(g,s-1) - Delta(g,s) <= 0`; decreasing: reversed; for `s >= 1`; with `full.path = TRUE` (SDM only) also for `s <= 0` | Shape monotone |
+
+With `n_g` pre-treatment coefficients of cohort `g` inside the window, `s = 0` included, the base RM has
+`prod(2 * (n_g - 1))` signed components and the base SDRM `prod(2 * (n_g - 2))`; at `M = 0` there is one. In the
+minimum-wage application, with pre-treatment counts 3, 5 and 6, that is 320 and 96 on full paths, 64 and 8 on window
+paths, and 10 and 8 under aggregate inference.
+
+| Function | Defined In | Called By | Calls | Purpose |
+| --- | --- | --- | --- | --- |
+| `.hc_restrictions`, `.hc_restriction_spec` | `inference_support.R` | `cohort_sensitivity`, `.hc_infer_one_impl`, print and plot methods | None | The nine names, and the map from a name and direction to `spec` |
+| `.hc_check_direction` | `inference_support.R` | `cohort_sensitivity` | None | Before any task starts: a shaped restriction requires a matching `direction`, and the others require `NULL` |
+| `.hc_infer_one_impl` | `inference_support.R` | `.hc_infer_one` | `.hc_infer_sd`, `.hc_infer_rm`, `.hc_engine_failure` | Refuse FLCI outside SD; set `topology.audit = FALSE` under Conditional for a shaped restriction unless the user named the key; require three pre-treatment coefficients for the base SDRM; set `rep$restriction_spec`; record `diagnostics$direction` |
+| `v3_shape_rows` | `restriction_geometry.R` | `v3_attach_shape`, `v3_rm_component_restriction`, `v3_rm_plugin_restriction` | `v3_first_difference_operator` | The sign or monotonicity rows of the table above, or `NULL` for shape `"none"`. `full_path` adds the pure pre-treatment steps of a monotonicity restriction; only `v3_attach_shape` passes it, so only SDM has them |
+| `v3_attach_shape` | `restriction_geometry.R` | `.hc_infer_sd` | `v3_shape_rows` | Append the rows to `restriction$A_Delta` and `d_vec` after `v3_reduce_representation`, which keeps the SD reduction and its `model$B_Q` |
+| `v3_benchmark_operator` | `restriction_geometry.R` | `v3_rm_scenario_table`, `v3_rm_component_restriction`, `v3_rm_plugin_restriction` | `v3_first_difference_operator`, `v3_second_difference_operator` | First differences for the base RM. For the base SDRM, second differences under the same names (`D1`, `rows`, `component` `"pre"` or `"post"`), so `v3_rm_preferred_component` needs no change |
+| `v3_rm_scenario_table`, `v3_rm_plugin_restriction` | `restriction_geometry.R` | Union path, `v3_prepare_rm_union`, `v3_clf_rm_union` | `v3_benchmark_operator`, `v3_shape_rows` | Take `spec`; the plug-in restriction appends the shape rows with zero bounds |
+| `v3_rm_component_restriction` | `restriction_geometry.R` | `.hc_rm_component_job`, `v3_prepare_rm_union` | `v3_benchmark_operator`, `v3_shape_rows` | Takes `spec`, appends the shape rows and removes exact repeated rows (see "Architectural Patterns") |
+| `.hc_infer_rm` | `inference_rm.R` | `.hc_infer_one_impl` | Geometry above, `v3_reduce_polyhedral_representation`, `v3_plugin_identified_set`, `.hc_conditional_search` | Count the signed components by base and stop above `max.components`; compute the shaped plug-in set for reporting and, for a shaped restriction, the unshaped one as `guide` |
+| `.hc_conditional_domain`, `.hc_conditional_search` | `utils-conditional-search.R` | SD and union paths | Point tests | The domain takes the base as `restriction`, with a linear continuation for SD and SDRM and a constant one for RM. `guide` (default `plugin`) feeds only the domain; every other use reports the shaped plug-in set |
+| `.hc_restriction_label` | `methods.R` | Print and plot methods | None | See "Restriction labels" in Notes |
+| `flci_cvxr_run` | `flci_core.R` | `flci_cvxr_solve`, `.maxBiasFN`, `.minBiasFN` | CVXR | Call `solve` when CVXR exports it; otherwise call `psolve` and read the status and values through `status` and `value`. It returns the old list form in both cases |
 
 ### FLCI weights detail
 
@@ -510,8 +586,8 @@ graph TD
 | Function | Defined In | Called By | Calls | Purpose |
 | --- | --- | --- | --- | --- |
 | `.hc_run_tasks` | `R/parallel.R` | `cohort_sensitivity` | `makePSOCKcluster`; `clusterCall` with `loadNamespace("CohortHonestDiD")`; `parLapplyLB` with `asNamespace("CohortHonestDiD")` | Run target/bound tasks on socket workers that load the package from the parent's library paths; 2 package-name literals |
-| `.hc_rm_cluster` | `R/inference_rm.R` | `.hc_infer_rm` when `component.cores > 1` | `loadNamespace("CohortHonestDiD")` on each worker | Start component workers for a single RM task; 1 package-name literal |
-| `.hc_rm_worker_job` | `R/inference_rm.R` | `parLapply` in `.hc_infer_rm` | `getFromNamespace(".hc_rm_component_job", "CohortHonestDiD")` | Prepare one signed RM component on a worker; 1 package-name literal |
+| `.hc_rm_cluster` | `R/inference_rm.R` | `.hc_infer_rm` when `component.cores > 1` | `loadNamespace("CohortHonestDiD")` on each worker | Start component workers for a single task on the union path; 1 package-name literal |
+| `.hc_rm_worker_job` | `R/inference_rm.R` | `parLapply` in `.hc_infer_rm` | `getFromNamespace(".hc_rm_component_job", "CohortHonestDiD")` | Prepare one signed component on a worker; 1 package-name literal |
 | `.hc_rm_worker_test` | `R/inference_rm.R` | RM point test | `getFromNamespace(".hc_rm_test_batch", "CohortHonestDiD")` | Test one batch of components at a point on a worker; 1 package-name literal |
 | `.hc_backend` | `R/utils-engine.R` | All inference adapters | `getNamespaceInfo(asNamespace("CohortHonestDiD"), "path")`; `sys.source` | Load the five engine files once into a cached private environment, from `upstream/R` (installed) or `inst/upstream/R` (source-loaded); 1 package-name literal |
 | `.sd_ie_find_project_root` | `inst/upstream/R/inference_engine.R` | `sd_inference_load_dependencies` | `getNamespaceInfo(asNamespace("CohortHonestDiD"), "path")` | Locate the same resource directory for the engine's own dependency environment; 1 package-name literal |
@@ -532,7 +608,8 @@ graph TD
     CR1 --> Fit["beta, Sigma, W, N"]
     CR2 --> Fit
     Ext --> Fit
-    Fit --> Given{"method given?"}
+    Fit --> Direction["Restriction, direction"]
+    Direction --> Given{"method given?"}
     Given -- No --> Default["C-LF; SD post-only"]
     Given -- Yes --> Explicit["Requested method/scope"]
     Default --> Target["Target and framework"]
@@ -566,14 +643,15 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
 | Input | Preserve observed outcomes and forward-fill treatment only; align named external quantities | Input/validation modules |
 | Covariance | CR1 multiplies the cross-product of the cluster scores by the CR1 factor; CR2 scales each residual by its (cluster, cohort group) factor before the estimator's operator and applies no factor; external input keeps the supplied `vcov` | `covariance.R`, estimator operator |
 | Representation | Carry the full covariance and deterministic normalization; retain target weights under aggregation | Mapping/targets |
-| Defaults | `method = NULL` resolves to C-LF under SD and RM; under SD `full.path = NULL` resolves to TRUE only for FLCI, so the default SD scope is post-only | `sensitivity.R` |
+| Restriction | Validate the name; refuse FLCI outside SD, a missing or wrong `direction`, and `full.path` outside SD, SDB and SDM, in that order | `sensitivity.R`, `inference_support.R` |
+| Defaults | `method = NULL` resolves to C-LF under every restriction; under SD, SDB and SDM `full.path = NULL` resolves to TRUE only for FLCI, so the default scope is post-only | `sensitivity.R` |
 | Balanced window | With `balanced = TRUE`: compute `L` and `S` from the coefficient labels; restrict the targets to periods 1 to `S`; aggregate inference on `L..S` with fixed cohort weights; under cohort inference keep the full paths or truncate them to the window | `sensitivity.R`, `targets.R`, restriction operators |
 | Tasks | One task per target and bound `M`, each with a fixed seed; optional socket workers | `parallel.R` |
-| Inference | Apply SD or RM and the chosen procedure to each target/bound task; under `cohort.paths = "window"` the restriction uses only the rows inside the window | Adapters/private engine |
+| Inference | Apply the restriction and the chosen procedure to each target/bound task; under `cohort.paths = "window"` the restriction uses only the rows inside the window | Adapters/private engine |
 | Search accounting | Reuse prepared tests and calibration; cache evaluations across all attempts and audits | `utils-search.R`, SD/RM adapters, private engine/adapter |
 | C-LF outer domain | Scan the necessary first-stage support using its certified finite bounds plus the endpoint probe margin | SD adapter and the LF support LP helper |
 | Conditional search domain | Invariant initial contrast/scale, bilateral expansion and mandatory adjacent-domain agreements; no certified global support | `utils-conditional-search.R` and the shared point cache |
-| Output | Keep each connected component and report failures without successful bounds; printed headers name the procedure, scope and covariance and, for balanced results, the window | S3 methods/plots |
+| Output | Keep each connected component and report failures without successful bounds; printed headers name the restriction and its direction, the procedure, scope and covariance and, for balanced results, the window | S3 methods/plots |
 | FLCI weights | For FLCI results: rebuild each target's representation, reconstruct `v = v^P + D'gamma` (or take `gamma`) with estimates and contributions, by element or by cohort; tabulate or draw a heatmap against the bound | `weights.R`, `plot.R`, `targets.R` |
 
 ---
@@ -584,8 +662,8 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
   normalization, coordinate metadata and cohort masses, whether it comes from `cohort_fit()` or `cohort_input()`.
 - **Estimate once, vary assumptions.** Sensitivity tasks reuse the fitted object; they do not re-estimate the panel.
 - **Defaults resolved in one place.** `cohort_sensitivity()` keeps the formals `method = NULL` and `full.path = NULL`
-  and resolves them at dispatch: `method` becomes C-LF under both restrictions, and under SD `full.path` becomes
-  TRUE exactly when the method is FLCI. The default SD analysis is therefore C-LF under the post-only restriction,
+  and resolves them at dispatch: `method` becomes C-LF under every restriction, and under SD, SDB and SDM `full.path`
+  becomes TRUE exactly when the method is FLCI. The default SD analysis is therefore C-LF under the post-only restriction,
   and `method = "FLCI"` uses the full path unless `full.path = FALSE` is given. `settings$method` and
   `settings$full.path` record the resolved values, and the printed header shows them (for example
   `cohort inference | SD | C-LF | post-only`).
@@ -641,6 +719,39 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
   `A E`, with `E` a basis of the null space of the fit's normalization: for imputation it has no row unless the window
   covers every cohort's whole pre-treatment path; for CS-NYT and CS-NT it is the `s = 0` row. The aggregated
   coefficients and covariance are `A betahat` and the symmetrized `A Sigma A'`.
+- **Base and shape.** A restriction is a base, which sets the rows and the code path, plus a shape, which adds rows.
+  Throughout this file the SD path also serves SDB and SDM, and the RM path also serves RMB, RMM, SDRM, SDRMB and
+  SDRMM. New arguments stay opt-in. `direction` is the last formal, so positional calls keep working, and
+  `settings$direction` exists only when it is used, after `control` and before the balanced fields. SD, RM and SDRM
+  keep the settings names of 1.0.0.
+- **Rows on differences only.** Every row of the nine restrictions sums to zero within a cohort, so it does not depend
+  on the estimator's normalization. That is why the sign is measured from `s = 0` for imputation, CS-NYT and CS-NT
+  alike. On a balanced panel the two estimators' block biases differ by cohort constants, so such rows give them the
+  same moments, covariances and search quantities. Imputation and CS-NYT therefore give the same cohort inference
+  under all nine restrictions. A sign row on an own level has sum `-1` and breaks this.
+- **Shape rows after the SD reduction.** `flci_reduce_model` needs the oriented SD blocks and computes `model$B_Q`, which
+  `.hc_conditional_domain` needs. The reduction therefore sees only the SD rows, and `v3_attach_shape` adds the others
+  to the moments it passes on. `B_Q` stays a valid radius, because the shaped set lies inside the SD set.
+- **Empty plug-in sets on the union path.** Sign and monotonicity rows can leave the plug-in LP infeasible under SDRMB
+  and SDRMM. RMB and RMM cannot, because they admit the flat path. Both union calls pass `allow_empty = TRUE`. The
+  plug-in set is reported only and does not steer the C-LF search. The Conditional domain gets the unshaped plug-in set
+  as `guide`, which is never empty and contains the shaped set.
+- **Exact repeated rows go.** At `M = 0` the monotonicity rows of RMM repeat the `-Dpost` or `+Dpost` rows exactly, and
+  the sign row at `s = 1` of RMB repeats one. The conditional test then conditions on one of two tied rows, and its
+  truncation bound lands on the statistic. `v3_rm_component_restriction` removes exact duplicates, so RMM at `M = 0`
+  equals RM at `M = 0`. RMB keeps its sign rows at `s >= 2`, which are sums of such rows and not exact repeats. RMB at
+  `M = 0` therefore allows the same paths as RM and can differ slightly from it through the test. No row repeats under
+  SD, SDB, SDM, SDRM, SDRMB or SDRMM, or when `M > 0`. HonestDiD keeps the duplicates; this is the one deliberate
+  difference from it. The plug-in restriction keeps them, because repeated rows do not change an LP's value.
+- **The interior mesh audit is on request under Conditional for shaped restrictions.** Their Conditional sets have many
+  pieces and gaps narrower than any mesh, so the meshes disagree, each refinement restarts, and the search runs into
+  `max.evaluations`. `.hc_infer_one_impl` therefore sets `ctl$topology.audit <- FALSE` for the six shaped restrictions
+  under Conditional unless `control` names the key, with either value. `settings$control` still shows only what the user
+  passed. C-LF keeps the audit, and SD, RM and SDRM keep it under both methods. Domain and endpoint checks always run.
+- **CVXR by export, not by version.** CVXR before 1.8 exports `solve`, which returns a list with `value`, `status` and
+  `getValue`. Later versions export `psolve`, which returns the optimal value, with `status` and `value` read from the
+  problem and the variables. CVXR 1.0-15 exports `psolve` and `solve` and no `status`, so `flci_cvxr_run` tests for the
+  `solve` export rather than for a version number.
 - **FLCI weights as a read-only view.** `flci_weights()` and the weights plot only read a finished result and call
   neither `cohort_sensitivity()` nor the engine. The extractor recomputes, for each target, the representation and
   its second-difference operators from the result's own settings, computes the post-only weights and center in
@@ -674,8 +785,8 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
   cases have failure statuses and no public bounds; FLCI uses its defined zero-noise limit.
 - **Reproducible task boundaries.** Seeds are assigned before dispatch, so results do not depend on the worker count.
   The public `parallel`/`cores` settings govern both pools: target/bound tasks run on socket workers, and only a
-  single RM task passes `cores` on to its component workers, so worker pools are never nested. Clusters are closed
-  on exit.
+  single task on the union path passes `cores` on to its component workers, so worker pools are never nested.
+  Clusters are closed on exit.
 - **Self-reference by name.** Workers receive the parent's library paths and load the package by name, and the
   engine is found through the package namespace path (`upstream/R` when installed, `inst/upstream/R` when
   source-loaded). The seven literals listed under "Package-name lookups" are the only places the code names its own
@@ -839,6 +950,33 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
   (a `cohort_input()` object whose covariance is zero on the pre-treatment block); every error and message; the
   default plot, which equals `type = "sets"` and has no tiles; and the weights plot's tiles, white zeros, captions
   and selections.
+- **Restriction labels.** Printed headers include `cohort inference | SDB, positive | C-LF | post-only`, `aggregate
+  inference | RMB, negative | C-LF | aggregate pre-period benchmark` and `cohort inference | SDRM | C-LF | cohort-specific
+  pre-period second-difference benchmarks`. Plot captions hold the same label,
+  followed by the SD scope for the base SD (`SDB, positive, post-only`). The x label of an ATT plot is `M` for the base SD
+  and `bar(M)` otherwise. `summary()` prints `settings`, which hold `restriction` and, when used, `direction`.
+- **Restriction messages.** `cohort_sensitivity()`, in this order: `FLCI is available only under SD.`; `<restriction>
+  requires direction = 'positive' or 'negative'.` (or `'increasing' or 'decreasing'`); `direction applies only to SDB, RMB,
+  and SDRMB (positive or negative) and to SDM, RMM, and SDRMM (increasing or decreasing).`; and `full.path applies only to
+  SD, SDB, and SDM.` `restriction = "S"` and `"R"` matched by abbreviation in 1.0.0 and now stop as ambiguous. Per task:
+  status `insufficient_prehistory` with `<restriction> requires at least three pre-treatment periods, counting period 0,
+  for every included cohort/path.`, and status `inference_error` with `<restriction> requires <n> signed benchmark
+  components; increase max.components deliberately.`
+- **Outcomes under the restrictions.** Conditional has no empty certificate, so a search that accepts nothing is
+  `uncertified_empty_search` with `success = FALSE`, and certified `empty` exists only under C-LF. `disconnected` is
+  common and its gaps can be wide. `.hc_engine_result` sets `center` to `NA` when the plug-in set is empty, and the plot
+  code skips missing centers. Under C-LF a gap narrower than the mesh can end as `topology_audit_failure`. Conditional is
+  slow on the union path, and under RMB and RMM it can end in `domain_stability_limit`.
+- **Balanced options under the restrictions.** With `cohort.paths = "full"`, benchmarks and pure pre-treatment rows use
+  the whole path and post-treatment rows every post-treatment period, also after `S`. With `"window"`, benchmarks and pure
+  pre-treatment rows are those inside `[L, 0]` and post-treatment rows run from 1 to `S`. Under aggregate inference all of
+  them use the aggregated event study on `[L, S]`. Under SDRM the benchmark changes with the window, so the equality of the
+  plug-in sets under both path choices holds for post-only SD only.
+- **Tests of the restrictions.** `tests/testthat/test-restrictions.R` (29 blocks) runs without HonestDiD and reads no
+  file. It covers argument checks and their order, rows against hand-written matrices, statuses, the Conditional audit
+  default, the search center, `settings`, print headers and plot captions, worker pools, imputation against CS-NYT, and
+  the nested solver, which is skipped without CVXR or ECOS. It also compares 30 rows of stored HonestDiD 0.2.8 numbers
+  on a one-path fixture. A HonestDiD result is a hull, so the comparison is one of hulls, and it leaves out `M = 0`.
 - **Covariance messages.** `covariance must be 'CR1' or 'CR2'.` for any other value; `At least two independent
   clusters are required for CR1 covariance.` (or `CR2`); and, for CR2, an error if a cluster holds all but a
   numerically negligible share of its cohort's weight. `cov = "CR2"` is not a partial match: it lands in `...` and is
@@ -869,7 +1007,9 @@ exists only for results computed with `method = "FLCI"`; it reads a finished res
 - **Engine layout.** The adapter lives in `inst/upstream/R/inference_adapter.R`; there is no `R/inference_adapter.R`.
   `arp-nuisance.R` keeps its original HonestDiD author notice; see `inst/upstream/NOTICE` for attribution.
 - **Scope of the theory.** The balanced-panel coverage and estimator-equivalence results of the paper do not
-  automatically extend to the unbalanced-panel approximation or to unsupported deterministic designs. On unbalanced
+  automatically extend to the unbalanced-panel approximation or to unsupported deterministic designs. The seven
+  further restrictions go beyond the paper. Conditional and C-LF still apply, because each is a polyhedron in `Delta` or
+  a finite union of polyhedra, but the paper's simulations do not cover them. On unbalanced
   panels the CR2 adjustment, like the bias map, is an approximation: the shares are fixed by unit and do not follow
   the period-by-period composition of the cells, and the estimator is no longer a function of the cell means alone.
   On unbalanced panels the balanced window is read from the coefficient labels and uses the fixed cohort masses, so

@@ -47,6 +47,8 @@
   K <- nrow(info)
   H <- diag(K)
   differences <- list()
+  # SD and SDRM paths continue linearly from the last two pre-treatment periods.
+  linear <- restriction != "RM"
   for (g in sort(unique(info$cohort))) {
     rows <- which(info$cohort == g)
     rows <- rows[order(info$relative_period[rows])]
@@ -54,11 +56,11 @@
     post <- rows[info$type[rows] == "post"]
     last <- pre[info$relative_period[pre] == 0]
     previous <- pre[info$relative_period[pre] == -1]
-    if (length(last) != 1L || (restriction == "SD" && length(previous) != 1L))
+    if (length(last) != 1L || (linear && length(previous) != 1L))
       stop("Conditional search continuation requires the last pre-period coordinates.", call. = FALSE)
     H[post, ] <- 0
-    H[post, last] <- if (restriction == "SD") 1 + info$relative_period[post] else 1
-    if (restriction == "SD") H[post, previous] <- -info$relative_period[post]
+    H[post, last] <- if (linear) 1 + info$relative_period[post] else 1
+    if (linear) H[post, previous] <- -info$relative_period[post]
     for (j in seq_len(length(rows) - 1L)) {
       q <- numeric(K)
       q[rows[c(j, j + 1L)]] <- c(-1, 1)
@@ -180,10 +182,10 @@
 
 .hc_conditional_search <- function(representation, built, plugin, restriction,
                                    control, anchors, problem, test, budget,
-                                   diagnostics = list()) {
+                                   diagnostics = list(), guide = plugin) {
   engine <- .hc_backend()
   diagnostics <- .hc_conditional_merge_diagnostics(diagnostics)
-  initial <- tryCatch(.hc_conditional_domain(representation, built, plugin,
+  initial <- tryCatch(.hc_conditional_domain(representation, built, guide,
     restriction, control), error = identity)
   if (inherits(initial, "error")) return(.hc_engine_failure(
     "search_scale_failure", conditionMessage(initial), diagnostics,

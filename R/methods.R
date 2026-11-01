@@ -52,6 +52,10 @@ print.summary_cohort_fit <- function(x, ...) {
   invisible(x)
 }
 
+.hc_restriction_label <- function(s) {
+  if (is.null(s$direction)) s$restriction else paste0(s$restriction, ", ", s$direction)
+}
+
 .hc_balanced_label <- function(s) {
   w <- s$window
   periods <- if (w[["upper"]] == 1L) "target period 1" else paste0("target periods 1 to ", w[["upper"]])
@@ -64,10 +68,12 @@ print.summary_cohort_fit <- function(x, ...) {
 print.cohort_sensitivity <- function(x, ...) {
   s <- x$settings
   method <- switch(s$method, flci = "FLCI", conditional = "Conditional", c_lf = "C-LF")
-  scope <- if (s$restriction == "RM") {
-    if (s$framework == "cohort") "cohort-specific pre-period benchmarks" else "aggregate pre-period benchmark"
+  base <- .hc_restriction_spec(s$restriction)$base
+  scope <- if (base != "SD") {
+    what <- if (base == "SDRM") "pre-period second-difference" else "pre-period"
+    if (s$framework == "cohort") paste("cohort-specific", what, "benchmarks") else paste("aggregate", what, "benchmark")
   } else if (s$full.path) "full path" else "post-only"
-  cat(sprintf("%s inference | %s | %s | %s\n", s$framework, s$restriction, method, scope))
+  cat(sprintf("%s inference | %s | %s | %s\n", s$framework, .hc_restriction_label(s), method, scope))
   cat(sprintf("Target: %s | %.1f%% pointwise confidence sets\n", s$target, 100 * s$conf.level))
   cat("Covariance:", .hc_covariance_label(x$fit), "\n")
   if (isTRUE(s$balanced)) cat(.hc_balanced_label(s), "\n", sep = "")

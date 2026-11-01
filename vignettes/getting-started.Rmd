@@ -183,6 +183,9 @@ A fixed `seed` gives the same results for any number of workers. The examples
 use at most two cores. RM confidence sets can consist of several pieces or be
 unbounded; `result$intervals` stores every piece.
 
+The detailed guide covers the sign and monotonicity versions of SD and RM, and
+SDRM, which applies RM to second differences.
+
 ## 6. Your own data and diagnostics
 
 Supply a long data frame with unit and time identifiers, a numeric outcome, and

@@ -6,7 +6,7 @@
   engine <- .hc_backend()
   restriction <- engine$v3_rm_component_restriction(
     representation$coordinate_info, M, scenarios$table[job, , drop = FALSE],
-    scenarios$operator)
+    scenarios$operator, spec = representation[["restriction_spec"]])
   built <- engine$v3_reduce_polyhedral_representation(representation, restriction)
   geometry <- engine$v3_make_arp_geometry(built, scope = "post_connected")
   if (method == "c_lf") return(engine$sd_lf_critical_value(
@@ -75,16 +75,32 @@
   engine <- .hc_backend()
   info <- representation$coordinate_info
   window <- representation[["restriction_window"]]
+  spec <- representation[["restriction_spec"]]
   pre.rows <- info$type == "pre"
   if (!is.null(window)) pre.rows <- pre.rows & info$relative_period >= window
   pre.count <- table(info$cohort[pre.rows])
-  count <- if (M == 0) 1 else prod(2 * (as.numeric(pre.count) - 1))
+  benchmarks <- as.numeric(pre.count) - if (spec$base == "SDRM") 2 else 1
+  count <- if (M == 0) 1 else prod(2 * benchmarks)
   if (!is.finite(count) || count > control$max.components)
-    stop("RM requires ", format(count), " signed benchmark components; increase max.components deliberately.", call. = FALSE)
-  scenarios <- engine$v3_rm_scenario_table(info, M, pre_window = window)
-  plugin.restriction <- engine$v3_rm_plugin_restriction(info, representation$betahat, M, pre_window = window)
-  built <- engine$v3_reduce_polyhedral_representation(representation, plugin.restriction)
-  plugin <- engine$v3_plugin_identified_set(built, scope = "post_connected")
+    stop(spec$restriction, " requires ", format(count), " signed benchmark components; increase max.components deliberately.", call. = FALSE)
+  scenarios <- engine$v3_rm_scenario_table(info, M, pre_window = window, spec = spec)
+  plugin.set <- function(spec) {
+    restriction <- engine$v3_rm_plugin_restriction(info, representation$betahat, M,
+                                                   pre_window = window, spec = spec)
+    built <- engine$v3_reduce_polyhedral_representation(representation, restriction)
+    list(built = built, set = engine$v3_plugin_identified_set(built, scope = "post_connected",
+                                                              allow_empty = TRUE))
+  }
+  shaped <- plugin.set(spec)
+  built <- shaped$built
+  plugin <- shaped$set
+  # The plug-in set can be empty under sign or monotonicity rows. Its base set
+  # never is, and it contains the shaped set, so it sets the search domain.
+  guide <- if (spec$shape == "none") plugin else {
+    base.spec <- spec
+    base.spec$shape <- "none"
+    plugin.set(base.spec)$set
+  }
   search <- if (method == "c_lf") .hc_engine_grid(built, plugin, numeric(), control) else NULL
   n <- nrow(scenarios$table)
   cores <- min(control$component.cores, n)
@@ -148,6 +164,6 @@
                                              .hc_rm_worker_test, theta = theta), theta)
     }
   })
-  .hc_conditional_search(representation, built, plugin, "RM", control,
-    anchors, prepared[[1L]]$problem, test, budget, diagnostics)
+  .hc_conditional_search(representation, built, plugin, spec$base, control,
+    anchors, prepared[[1L]]$problem, test, budget, diagnostics, guide)
 }

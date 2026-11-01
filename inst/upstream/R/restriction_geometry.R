@@ -184,11 +184,68 @@ v3_sd_restriction <- function(coordinate_info, M_raw, pre_window = NULL) {
   list(A_Delta = A_Delta, d_vec = d_vec, operator = operator)
 }
 
-v3_rm_scenario_table <- function(coordinate_info, Mbar, pre_window = NULL) {
+# spec, here and below: list(base, shape, direction) from .hc_restriction_spec().
+# NULL means the plain SD or RM restriction.
+
+# Extra rows of the B and M restrictions, for A %*% Delta <= 0. Every row sums to
+# zero within a cohort, so it does not depend on the normalization of the path.
+# full_path adds the pure pre-treatment steps of a monotonicity restriction.
+v3_shape_rows <- function(coordinate_info, spec, pre_window = NULL, full_path = FALSE) {
+  if (is.null(spec) || identical(spec$shape, "none")) return(NULL)
+  if (spec$shape == "monotone") {
+    operator <- v3_first_difference_operator(coordinate_info, pre_window = pre_window)
+    rows <- operator$D1[full_path | operator$rows$component == "post", , drop = FALSE]
+    rownames(rows) <- paste0("mono_", rownames(rows))
+    return(if (spec$direction == "increasing") -rows else rows)
+  }
+  names_all <- as.character(coordinate_info$coordinate)
+  rows <- list()
+  for (g in sort(unique(coordinate_info$cohort))) {
+    one <- coordinate_info[coordinate_info$cohort == g, , drop = FALSE]
+    base <- as.character(one$coordinate[one$relative_period == 0L])
+    v3_assert(length(base) == 1L, paste0("Path ", g, " has no period 0 coordinate."))
+    for (cell in as.character(one$coordinate[one$relative_period >= 1L])) {
+      row <- setNames(numeric(length(names_all)), names_all)
+      row[c(base, cell)] <- c(1, -1)
+      rows[[paste0("sign_", cell)]] <- row
+    }
+  }
+  rows <- do.call(rbind, rows)
+  if (spec$direction == "positive") rows else -rows
+}
+
+# Keep the SD reduction, whose bias bound sets the Conditional search domain, and
+# add the extra rows to the moments it passes on.
+v3_attach_shape <- function(built, spec, full_path = FALSE) {
+  rows <- v3_shape_rows(built$representation$coordinate_info, spec,
+                        pre_window = built$representation[["restriction_window"]],
+                        full_path = full_path)
+  if (is.null(rows)) return(built)
+  A_Delta <- built$restriction$A_Delta
+  built$restriction$A_Delta <- rbind(A_Delta, rows[, colnames(A_Delta), drop = FALSE])
+  built$restriction$d_vec <- c(built$restriction$d_vec,
+                               setNames(numeric(nrow(rows)), rownames(rows)))
+  built
+}
+
+# The union restrictions bound the post-connected rows of this operator by a
+# multiple of one signed pure pre-treatment row. RM uses first differences, SDRM
+# second differences; rows$component is "pre" or "post" in both.
+v3_benchmark_operator <- function(coordinate_info, pre_window = NULL, spec = NULL) {
+  if (!identical(spec$base, "SDRM")) {
+    return(v3_first_difference_operator(coordinate_info, pre_window = pre_window))
+  }
+  operator <- v3_second_difference_operator(coordinate_info, pre_window = pre_window)
+  rows <- operator$rows
+  rows$component <- ifelse(rows$component == "pure_pre", "pre", "post")
+  list(D1 = operator$D2, rows = rows)
+}
+
+v3_rm_scenario_table <- function(coordinate_info, Mbar, pre_window = NULL, spec = NULL) {
   Mbar <- as.numeric(Mbar)
   v3_assert(length(Mbar) == 1L && is.finite(Mbar) && Mbar >= 0,
             "Mbar must be one finite nonnegative scalar.")
-  operator <- v3_first_difference_operator(coordinate_info, pre_window = pre_window)
+  operator <- v3_benchmark_operator(coordinate_info, pre_window, spec)
   choices <- list()
   for (g in sort(unique(operator$rows$cohort))) {
     pre <- operator$rows$cohort == g & operator$rows$component == "pre"
@@ -213,9 +270,10 @@ v3_rm_scenario_table <- function(coordinate_info, Mbar, pre_window = NULL) {
 }
 
 v3_rm_component_restriction <- function(
-    coordinate_info, Mbar, scenario_row, operator = NULL, pre_window = NULL) {
+    coordinate_info, Mbar, scenario_row, operator = NULL, pre_window = NULL,
+    spec = NULL) {
   if (is.null(operator)) {
-    operator <- v3_first_difference_operator(coordinate_info, pre_window = pre_window)
+    operator <- v3_benchmark_operator(coordinate_info, pre_window, spec)
   }
   D1 <- operator$D1
   meta <- operator$rows
@@ -249,6 +307,13 @@ v3_rm_component_restriction <- function(
     pieces[[cursor]] <- lower
   }
   A_Delta <- do.call(rbind, pieces)
+  shape <- v3_shape_rows(coordinate_info, spec)
+  if (!is.null(shape)) {
+    # At Mbar = 0 a sign or monotonicity row can repeat a row above. An exact tie
+    # in the LP breaks the conditional test, and the row adds nothing.
+    A_Delta <- rbind(A_Delta, shape[, colnames(A_Delta), drop = FALSE])
+    A_Delta <- A_Delta[!duplicated(A_Delta), , drop = FALSE]
+  }
   v3_assert(!anyDuplicated(rownames(A_Delta)),
             "RM component has duplicate restriction names.")
   list(
@@ -258,8 +323,9 @@ v3_rm_component_restriction <- function(
   )
 }
 
-v3_rm_plugin_restriction <- function(coordinate_info, beta, Mbar, pre_window = NULL) {
-  operator <- v3_first_difference_operator(coordinate_info, pre_window = pre_window)
+v3_rm_plugin_restriction <- function(coordinate_info, beta, Mbar, pre_window = NULL,
+                                     spec = NULL) {
+  operator <- v3_benchmark_operator(coordinate_info, pre_window, spec)
   beta <- beta[colnames(operator$D1)]
   v3_assert(!anyNA(beta), "RM plug-in beta is not aligned to path coordinates.")
   D1 <- operator$D1
@@ -277,6 +343,11 @@ v3_rm_plugin_restriction <- function(coordinate_info, beta, Mbar, pre_window = N
   }
   A_Delta <- do.call(rbind, pieces)
   rownames(A_Delta) <- make.unique(paste0("rm_plugin_", seq_len(nrow(A_Delta))))
+  shape <- v3_shape_rows(coordinate_info, spec)
+  if (!is.null(shape)) {
+    A_Delta <- rbind(A_Delta, shape[, colnames(A_Delta), drop = FALSE])
+    bounds <- c(bounds, numeric(nrow(shape)))
+  }
   list(
     A_Delta = A_Delta,
     d_vec = setNames(bounds, rownames(A_Delta)),

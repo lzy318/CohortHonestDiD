@@ -355,7 +355,7 @@ plot(att_aggregate, main = "Aggregate restrictions: minimum-wage ATT",
 ```
 
 The dotted line is the conventional estimate, and the shaded band, drawn when
-its bounds are finite, is the plug-in identified set. Under the post-only
+its bounds are finite, is the plug-in identified set. Under the post-only SD
 restriction, the plug-in set is never empty, because the pre-treatment path is
 not restricted. The full-path restriction also bounds the curvature of the
 estimated pre-treatment paths. In this application those paths violate it at
@@ -601,7 +601,258 @@ plot(rm_clf, main = "Artificial panel: RM confidence sets", ylab = "Artificial e
 
 RM has no full-path option and no FLCI; requesting either is an input error.
 
-## 6. Read and reuse results {#results}
+## 6. Restrictions beyond SD and RM {#restrictions}
+
+`restriction` accepts seven values beyond `"SD"` and `"RM"`. SDRM applies the
+idea of RM to second differences. SD, RM, and SDRM can each carry a sign or a
+monotonicity requirement. `target`, `framework`, and `balanced` work as under SD
+and RM.
+
+| The bound limits | Alone | With a sign | With monotonicity |
+|---|---|---|---|
+| Slope changes, in outcome units | `"SD"` | `"SDB"` | `"SDM"` |
+| Post-treatment changes, relative to the largest pre-treatment change | `"RM"` | `"RMB"` | `"RMM"` |
+| Post-treatment slope changes, relative to the largest pre-treatment slope change | `"SDRM"` | `"SDRMB"` | `"SDRMM"` |
+
+The paper and its simulations do not cover these seven restrictions. Conditional
+and C-LF still apply, because each is a set of linear inequalities on the block
+biases or a finite union of such sets.
+
+### Set the sign or the monotonicity
+
+The six restrictions in the last two columns require `direction`.
+
+- SDB, RMB, and SDRMB compare each post-treatment period with \(s=0\).
+  `direction = "positive"` requires \(\Delta_{g,s}\geq\Delta_{g,0}\) for every
+  \(s\geq 1\), and `"negative"` reverses the inequality.
+- SDM, RMM, and SDRMM compare each period with the one before it, from \(s=0\)
+  onward. `direction = "increasing"` requires
+  \(\Delta_{g,s}\geq\Delta_{g,s-1}\) for every \(s\geq 1\), and `"decreasing"`
+  reverses the inequality.
+
+One `direction` applies to all cohorts. Cohorts whose pre-treatment trends point
+in opposite ways can then leave the plug-in set empty whichever way it points,
+as the example below shows.
+
+The sign is measured from \(s=0\) for every estimator. This removes the cohort
+constants that separate the imputation and CS-NYT block biases. On a balanced
+panel, imputation and CS-NYT therefore give the same cohort inference under all
+nine restrictions when controls and seeds match. [Section 3](#targets) states the
+limits of this equivalence.
+
+By default, monotonicity restricts only the steps from \(s=0\) onward.
+`full.path = TRUE` also bounds the pure pre-treatment second differences under
+SD, SDB, and SDM. Under SDM it also restricts the pre-treatment steps. The other
+six restrictions do not take `full.path`.
+
+```{r shape-sets}
+info <- fit_imp$coordinate_info
+last_slope <- coef(fit_imp)[info$relative_period == 0] -
+  coef(fit_imp)[info$relative_period == -1]
+tab(data.frame(cohort = info$cohort[info$relative_period == 0],
+               last_slope = unname(last_slope)))
+M_shape <- c(0, .01, .02)
+sdb_positive <- cohort_sensitivity(fit_imp, restriction = "SDB", M = M_shape,
+                                   direction = "positive", seed = 123)
+sdm_decreasing <- cohort_sensitivity(fit_imp, restriction = "SDM", M = M_shape,
+                                     direction = "decreasing", seed = 123)
+print(sdm_decreasing)
+with_plugin <- function(xs, M = M_shape) do.call(rbind, Map(function(x, label) {
+  i <- x$intervals[x$intervals$M %in% M, ]
+  cbind(example = label, i[, c("M", "component", "lower", "upper",
+                               "plugin.lower", "plugin.upper", "status")])
+}, xs, names(xs)))
+tab(with_plugin(list(SD = att, SDB_positive = sdb_positive,
+                     SDM_decreasing = sdm_decreasing)))
+```
+
+The first table gives each cohort's slope just before adoption, the change from
+\(s=-1\) to \(s=0\). It is positive for two cohorts and negative for the third.
+The printed header names the restriction and its direction.
+
+SDB with `"positive"` is empty at `M = 0` and has two pieces far apart at the
+larger bounds. SDM with `"decreasing"` has one piece at those bounds.
+
+Confidence sets need not be nested. Every SDM path is also an SD path, yet at
+`M = .01` the upper end of the SDM confidence set lies above that of the SD
+confidence set, because each restriction has its own test.
+
+The next chunk repeats the SDB call with CS-NYT, under the same bounds and seed.
+
+```{r shape-equivalence}
+sdb_positive_nyt <- cohort_sensitivity(fit_nyt, restriction = "SDB", M = M_shape,
+                                       direction = "positive", seed = 123)
+tab(data.frame(same_status = identical(sdb_positive$intervals$status,
+                                       sdb_positive_nyt$intervals$status),
+  largest_difference = max(abs(c(
+    sdb_positive$intervals$lower - sdb_positive_nyt$intervals$lower,
+    sdb_positive$intervals$upper - sdb_positive_nyt$intervals$upper)), na.rm = TRUE)),
+  digits = 10)
+```
+
+The two estimators agree on every status, and their endpoints differ only by
+numerical precision.
+
+### Read empty and disconnected sets
+
+```{r shape-plot, fig.height=4.5}
+plot(sdb_positive, main = "SDB, positive: minimum-wage ATT",
+     ylab = "Log teen employment")
+```
+
+Each vertical segment is a piece, `M = 0` has none, and at `M = .01` the dotted
+conventional estimate lies between the two pieces.
+
+Status `empty` means that C-LF rejects every value of the target at that bound.
+Under SDB, SDM, SDRMB, and SDRMM, a path must nearly continue its last
+pre-treatment slope at a small bound, and a direction against that slope cannot
+be met. An empty set therefore says that the data reject the restriction at that
+bound.
+
+The plug-in set can be empty when the confidence set is not, because it ignores
+sampling uncertainty. With the slopes above, the positive sign and the decreasing
+direction both leave it empty at small bounds. ATT plots then draw no shaded
+band.
+
+Status `disconnected` means that the set has several pieces. The test is run one
+value at a time, and nothing forces the accepted values to be adjacent. Under
+SDB with `"positive"`, the gap here is much wider than either piece. Report every
+piece.
+
+These confidence sets can have narrow pieces and gaps narrower than any grid. A
+coarse grid can lose a whole piece. Near the smallest bound the data do not
+reject, a small piece can also appear or vanish with the seed, and more draws
+reduce this. For final results, raise `lf.sims` and keep `grid.points` at its
+default or higher. Narrow gaps also make the comparison grids of `topology.audit`
+disagree, and under Conditional the search then restarts until it runs out of
+evaluations. Conditional therefore runs these comparisons for the six
+restrictions that take `direction` only if you set `topology.audit` in `control`.
+C-LF keeps them, and a task can then end as `topology_audit_failure`. Setting
+`topology.audit = FALSE` returns a set, but a gap narrower than the grid can go
+unnoticed. [Section 8](#controls) describes these controls.
+
+### Choose the procedure
+
+The FLCI is not available under these restrictions. Use C-LF, the default.
+Conditional has no first stage, so it can keep values that C-LF rejects, as the
+next table shows. A Conditional search that accepts no value cannot tell you that
+the set is empty, and it ends as `uncertified_empty_search` with
+`success = FALSE`. Under RMB and RMM, Conditional can also run much longer and
+stop at `domain_stability_limit`.
+
+```{r shape-conditional}
+sdb_conditional <- cohort_sensitivity(fit_imp, restriction = "SDB", M = 0,
+                                      direction = "positive",
+                                      method = "Conditional", seed = 123)
+tab(with_plugin(list(C_LF = sdb_positive, Conditional = sdb_conditional), M = 0))
+```
+
+At `M = 0`, C-LF rejects every value and Conditional keeps two pieces.
+
+### Add a sign or monotonicity to RM
+
+RMB and RMM are unions of cases, as RM is, so the examples return to the
+artificial panel and the demonstration settings of [Section 4](#procedures).
+
+```{r rm-shapes}
+rm_shapes <- list(RM = rm_clf,
+  RMB_positive = cohort_sensitivity(small_fit, restriction = "RMB", M = c(0, 1),
+    direction = "positive", seed = 2026, control = illustrative_control),
+  RMM_decreasing = cohort_sensitivity(small_fit, restriction = "RMM", M = c(0, 1),
+    direction = "decreasing", seed = 2026, control = illustrative_control))
+tab(rows(rm_shapes))
+```
+
+At `M = 1` the positive sign lowers the upper end of the RM confidence set, and
+the decreasing direction raises its lower end.
+
+At `M = 0`, RM allows only a flat post-treatment path. The monotonicity
+inequalities then repeat RM's exactly, so the package drops them and RMM equals
+RM. RMB allows the same flat paths, but only its sign inequality at \(s=1\) is an
+exact repeat. The later ones stay and change the test a little, so RMB differs
+slightly from RM.
+
+### Use SDRM
+
+SDRM bounds each post-treatment second difference,
+\(|\Delta_{g,s}-2\Delta_{g,s-1}+\Delta_{g,s-2}|\) for \(s\geq 1\), by \(\bar M\)
+times the same cohort's largest absolute pre-treatment second difference. You
+pass \(\bar M\) as `M`, as under RM, and the bound has no units. That benchmark
+needs three pre-treatment coefficients in every cohort, counting \(s=0\). In the
+artificial panel the period-3 cohort has only two.
+
+```{r sdrm-prehistory}
+sdrm_short <- cohort_sensitivity(small_fit, restriction = "SDRM", M = 1,
+                                 seed = 2026, control = illustrative_control)
+tab(sdrm_short$intervals[, c("M", "status", "message")])
+```
+
+The next panel adds one period before adoption, so that both cohorts have enough
+history.
+
+```{r sdrm-examples}
+set.seed(314159)
+longer <- expand.grid(id = seq_len(72), time = seq_len(5))
+longer$g <- rep(c(0, 4, 5), each = 24)[longer$id]
+longer$D <- as.integer(longer$g > 0 & longer$time >= longer$g)
+longer$Y <- 1 + longer$id / 100 + .06 * longer$time + .08 * longer$D +
+  rnorm(nrow(longer), sd = .08)
+longer_fit <- cohort_fit(Y ~ D, data = longer, index = c("id", "time"),
+                         estimator = "imp")
+sdrm <- cohort_sensitivity(longer_fit, restriction = "SDRM", M = 1,
+                           seed = 2026, control = illustrative_control)
+sdrmm <- cohort_sensitivity(longer_fit, restriction = "SDRMM", M = 1,
+                            direction = "decreasing", seed = 2026,
+                            control = illustrative_control)
+print(sdrm)
+tab(rows(list(SDRM = sdrm, SDRMM_decreasing = sdrmm)))
+```
+
+The printed header names the second-difference benchmarks.
+
+### Count the cases
+
+Run time grows with the number of cases. RM, SDRM, and their sign and
+monotonicity versions are unions of cases. Let \(n_g\) count cohort \(g\)'s
+pre-treatment coefficients, including \(s=0\). With `M` above zero, the number of
+cases is the product over cohorts of \(2(n_g-1)\) under RM, RMB, and RMM, and of
+\(2(n_g-2)\) under SDRM, SDRMB, and SDRMM. At `M = 0` there is one case.
+
+```{r case-counts}
+pre <- table(fit_imp$coordinate_info$cohort[fit_imp$coordinate_info$type == "pre"])
+pre
+window <- rep(min(pre), length(pre))
+tab(data.frame(paths = c("cohort, full paths", "cohort, window paths", "aggregate"),
+  RM = c(prod(2 * (pre - 1)), prod(2 * (window - 1)), 2 * (max(pre) - 1)),
+  SDRM = c(prod(2 * (pre - 2)), prod(2 * (window - 2)), 2 * (max(pre) - 2))))
+```
+
+The three cohorts have 3, 5, and 6 pre-treatment coefficients, so RM has
+\(4\times 8\times 10=320\) cases on full paths. Each added cohort multiplies the
+count. A task with more cases than `max.components` stops with status
+`inference_error`, and its message gives the count. For a single task,
+`parallel = TRUE` runs the cases on workers.
+
+Aggregate inference has one path, so its count stays small. It restricts the
+aggregated event study rather than each cohort's block bias, which is a different
+assumption. `cohort.paths = "window"` with `balanced = TRUE` also lowers the
+count, but it changes the benchmark and the target.
+
+### Compare with HonestDiD
+
+The nine restrictions agree with HonestDiD 0.2.8 in the package tests. Those
+tests use one event study, passed to `cohort_input()` with the identity as `W` and
+the coefficient at \(s=0\) fixed at zero. HonestDiD reports the smallest and
+largest accepted grid points, so compare those with the smallest `lower` and the
+largest `upper` here.
+
+The package departs from HonestDiD at `M = 0` under RMM and RMB. It drops the
+inequalities that repeat exactly, as the RM example above shows, because an exact
+tie distorts the conditional test. HonestDiD keeps them. RMM at `M = 0` therefore
+equals RM here, and RMB loses only its sign inequality at \(s=1\). No other
+restriction or bound has such repeats.
+
+## 7. Read and reuse results {#results}
 
 A `cohort_fit` holds the coefficients `betahat`, their full covariance `Sigma`,
 the bias map `W`, the `normalization`, the coefficient labels
@@ -651,11 +902,11 @@ Each target and bound ends in one of these outcomes:
 
 | Outcome | Meaning | How to recognize it |
 |---|---|---|
-| Nonempty set | One or more computed pieces | `success = TRUE`; bounds may be infinite |
+| Nonempty set | One or more computed pieces | `success = TRUE`, status `ok`, `disconnected`, or `unbounded`; bounds may be infinite |
 | Certified empty set | C-LF's least-favorable first stage rejects every value | `success = TRUE`, status `empty`, missing bounds |
 | Unresolved empty search | A finite search accepted no value and no certificate applies | `success = FALSE`, status `uncertified_empty_search`, warning |
 | Unsupported task | No sampling variation in the target or tested moments, or too little pre-treatment history | `success = FALSE`, a status such as `unsupported_zero_variance` or `insufficient_prehistory`, warning |
-| Numerical failure or limit | The search or solver failed or did not finish within its controls | `success = FALSE`, a status such as `evaluation_limit` or `inference_error`, message, warning |
+| Numerical failure or limit | The search or solver failed or did not finish within its controls | `success = FALSE`, a status such as `evaluation_limit`, `topology_audit_failure`, or `inference_error`, message, warning |
 | Invalid input | An argument or data requirement is violated | Error; no inference is run |
 
 Read each row's `status` and `message` rather than relying on a fixed list of
@@ -679,7 +930,7 @@ the target and its weights, the cohort or aggregate representation, the
 restriction and the units of its bound, the procedure and SD scope, the
 confidence level, and every piece of the set.
 
-## 7. Numerical controls and reproducibility {#controls}
+## 8. Numerical controls and reproducibility {#controls}
 
 All numerical controls go in one uniquely named `control` list.
 
@@ -692,10 +943,13 @@ All numerical controls go in one uniquely named `control` list.
 | `max.expansions` | `6` | Range doublings for Conditional, including the two expansions needed to confirm a stable range (0 or 1 returns no set), and range expansions for RM C-LF; not used by SD C-LF |
 | `max.refinements` | `3` | Finer-grid retries after an unresolved search; 0 disables them |
 | `max.evaluations` | `100000` | Point evaluations per target and bound, counted across all probes, audits, and retries |
-| `topology.audit` | `TRUE` | `FALSE` skips the interior grid comparisons; domain and endpoint checks remain |
-| `max.components` | `100000` | Maximum number of RM cases |
+| `topology.audit` | `TRUE` | `FALSE` skips the interior grid comparisons; domain and endpoint checks remain. Under Conditional the default is `FALSE` for the restrictions that take `direction` |
+| `max.components` | `100000` | Maximum number of cases per task |
 | `flci.solver` | `"direct"` | FLCI optimizer, `"direct"` or `"nested"` (requires CVXR) |
 | `flci.control` | `list()` | Solver-specific settings, listed below |
+
+In this section, RM stands for every restriction that has cases, and SD for SD,
+SDB, and SDM.
 
 More calibration draws reduce the Monte Carlo noise in C-LF, and a denser grid
 adds point tests; both take more time. For final results, increase the
@@ -722,7 +976,7 @@ With an explicit `seed`, each task receives a fixed random-number stream, the
 results do not depend on the number of workers, and the caller's random-number
 state is restored; `seed = NULL` draws the task seeds from the caller's stream.
 `parallel = TRUE` runs independent target and bound tasks, or the cases of a
-single RM task, on `cores` workers.
+single task, on `cores` workers.
 
 ### FLCI solvers {#solvers}
 
@@ -737,9 +991,11 @@ single RM task, on `cores` workers.
 | nested | `feasibility_tol` | `1e-6`, positive |
 | nested | `objective_tol` | `1e-6`, positive |
 
-Each key belongs to its solver, and the two lists cannot be mixed.
+Each key belongs to its solver, and the two lists cannot be mixed. The default
+`"ECOS"` needs the ECOSolveR package, which CVXR 1.8 and later do not install.
+`solver = "CLARABEL"` works without it.
 
-## 8. Supply external estimates and construct W {#external}
+## 9. Supply external estimates and construct W {#external}
 
 External input needs the full named vector of cohort-period coefficients
 \(\hat\beta\) (pre-treatment, reference, and post-treatment), its joint
@@ -798,11 +1054,12 @@ tab(short_result$intervals[, c("status", "message")])
 ```
 
 Under cohort inference, every treated cohort needs at least two pre-treatment
-periods; this task returns `insufficient_prehistory` and no set. One
+periods, and three under SDRM, SDRMB, and SDRMM; this task returns
+`insufficient_prehistory` and no set. One
 post-treatment period is enough, as for the period-4 cohort of the full
 artificial panel.
 
-## 9. Plot choices {#plots}
+## 10. Plot choices {#plots}
 
 Fit plots accept `type = "dynamic"` (the default) or `"cohort-dynamic"`;
 sensitivity plots take their form from the computed target. `main`, `xlab`,
