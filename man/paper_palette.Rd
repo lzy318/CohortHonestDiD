@@ -16,3 +16,8 @@ A character vector of hexadecimal colors, named for representations
 \description{
 Paper color palette
 }
+\examples{
+paper_palette()
+paper_palette("procedure")
+paper_palette("cohort")
+}

@@ -26,6 +26,15 @@
 #' @param diagnostics Optional list describing covariance provenance and sample.
 #' @return A \code{cohort_fit} object accepted by
 #'   \code{\link{cohort_sensitivity}()}.
+#' @examples
+#' data(minimum_wage)
+#' fit <- cohort_fit(Y ~ D, data = minimum_wage, index = c("id", "year"))
+#' # A round trip: pass the fit's own estimates through cohort_input().
+#' external <- cohort_input(betahat = coef(fit), vcov = vcov(fit),
+#'                          coefficient_info = fit$coordinate_info, W = fit$W,
+#'                          normalization = fit$normalization,
+#'                          cohort_sizes = fit$cohort_masses, estimator = "imp")
+#' external
 #' @export
 cohort_input <- function(betahat, vcov, coefficient_info, W, normalization,
                          cohort_sizes, estimator = "imp", diagnostics = list()) {

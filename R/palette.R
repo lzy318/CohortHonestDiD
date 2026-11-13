@@ -3,6 +3,10 @@
 #' @param type Representation, procedure, or cohort colors.
 #' @return A character vector of hexadecimal colors, named for representations
 #'   and procedures and ordered for cohorts.
+#' @examples
+#' paper_palette()
+#' paper_palette("procedure")
+#' paper_palette("cohort")
 #' @export
 paper_palette <- function(type = c("representation", "procedure", "cohort")) {
   type <- match.arg(type)

@@ -40,6 +40,13 @@
 #'   apply only to \code{type = "sets"}. For a post-only FLCI, \code{gamma} is
 #'   zero by construction, and \code{weights = "gamma"} only prints a message.
 #'   Conditional and C-LF results have no such weights.
+#' @examples
+#' data(minimum_wage)
+#' fit <- cohort_fit(Y ~ D, data = minimum_wage, index = c("id", "year"))
+#' plot(fit)
+#' plot(fit, type = "cohort-dynamic")
+#' result <- cohort_sensitivity(fit, M = c(0, 0.01), method = "FLCI", seed = 1)
+#' plot(result)
 #' @name plot_cohort
 #' @importFrom rlang .data
 NULL

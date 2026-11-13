@@ -1,3 +1,12 @@
+# CohortHonestDiD 1.1.1
+
+First CRAN release. Results are unchanged from 1.1.0.
+
+* The help pages of `cohort_input()`, `paper_palette()`, and the plot methods
+  have runnable examples.
+* `DESCRIPTION` lists Ashesh Rambachan and Jonathan Roth as copyright holders
+  of the routines adapted from HonestDiD.
+
 # CohortHonestDiD 1.1.0
 
 ## New restrictions
