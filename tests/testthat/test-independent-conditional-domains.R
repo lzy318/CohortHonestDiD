@@ -52,6 +52,7 @@ independent_d4_balanced_fixture <- function(estimator) {
 }
 
 test_that('wider Conditional searches retain the known separated component', {
+  skip_on_cran()
   # Full-precision complete Imp union saved before D4, independent of new code.
   expected <- matrix(c(-.00951900336365546, .139143511615014,
     .121620125095407, .311141338412962), nrow = 2L)
@@ -79,6 +80,7 @@ test_that('wider Conditional searches retain the known separated component', {
 })
 
 test_that('a wider initial range retains reference spacing and the known gap', {
+  skip_on_cran()
   expected <- matrix(c(-.00951900336365546, .139143511615014,
     .121620125095407, .311141338412962), nrow = 2L)
   for (estimator in c('imp', 'cs_nyt')) {

@@ -6,6 +6,8 @@ First CRAN release. Results are unchanged from 1.1.0.
   have runnable examples.
 * `DESCRIPTION` lists Ashesh Rambachan and Jonathan Roth as copyright holders
   of the routines adapted from HonestDiD.
+* The four slowest validation tests are skipped on CRAN. `devtools::test()`
+  still runs them.
 
 # CohortHonestDiD 1.1.0
 

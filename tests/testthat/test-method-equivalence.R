@@ -1,4 +1,5 @@
 test_that("balanced Imp and CS-NYT have equivalent conditional and C-LF sets", {
+  skip_on_cran()
   d <- independent_two_cohort_short_panel()
   imp <- cohort_fit(y ~ d, data = d, index = c("id", "time"), estimator = "imp")
   cs <- cohort_fit(y ~ d, data = d, index = c("id", "time"), estimator = "cs_nyt")

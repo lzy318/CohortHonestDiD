@@ -15,6 +15,7 @@ independent_refinement_fixture <- function() {
 }
 
 test_that('bounded refinement preserves a genuinely disconnected confidence set', {
+  skip_on_cran()
   f <- independent_refinement_fixture()
   run <- function(refinements, budget = 100000L, grid = 21L) {
     cohort_sensitivity(f, M = 0, method = 'Conditional', full.path = TRUE,

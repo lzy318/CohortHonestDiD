@@ -10,14 +10,14 @@ This is a new submission. The package implements the methods of Liu (2026),
 * checking CRAN incoming feasibility ... NOTE
   New submission
 
-  Any words flagged as possibly misspelled in DESCRIPTION are author names
-  (Callaway, Liu, Rambachan, Roth, Sant'Anna) or 'HonestDiD', the name of the
-  method in the title of the paper that the package implements.
+  Possibly misspelled words in DESCRIPTION: Callaway, HonestDiD, Liu,
+  Rambachan, Sant'Anna. These are author names and 'HonestDiD', the name of
+  the method in the title of the paper that the package implements.
 
 ## Test environments
 
 * Local: Windows 11 x64, R 4.4.0, `R CMD check --as-cran`
-* win-builder: R-devel and R-release
+* win-builder: R-devel
 
 ## Code adapted from 'HonestDiD'
 
